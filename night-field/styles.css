@@ -1,5 +1,5 @@
 :root {
-  --bg: #050a12;
+  --bg: #0e1828;
   --fg: #e4eef5;
   --muted: #7a8f9f;
   --accent: #7ee0ff;
@@ -49,7 +49,7 @@ body {
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  background: linear-gradient(180deg, rgba(5, 10, 18, 0.92), rgba(5, 10, 18, 0.55));
+  background: linear-gradient(180deg, rgba(14, 24, 40, 0.92), rgba(14, 24, 40, 0.55));
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(8px);
 }

@@ -8,13 +8,15 @@ const container = document.getElementById("canvas-wrap");
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-const nightSky = 0x050a12;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.28;
+const nightSky = 0x0e1828;
 renderer.setClearColor(nightSky, 1);
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const fogColor = 0x0a1522;
-scene.fog = new THREE.Fog(fogColor, 7, 34);
+const fogColor = 0x121e2e;
+scene.fog = new THREE.Fog(fogColor, 14, 52);
 
 const camera = new THREE.PerspectiveCamera(
   50,
@@ -34,20 +36,23 @@ controls.target.set(0, 0.2, 0);
 controls.autoRotate = !noRotate;
 controls.autoRotateSpeed = 0.32;
 
-const hemi = new THREE.HemisphereLight(0x3a5070, 0x0c140c, 0.42);
+const hemi = new THREE.HemisphereLight(0x6a8ab8, 0x1c3028, 0.62);
 scene.add(hemi);
-const moon = new THREE.DirectionalLight(0xb8d4ff, 0.62);
+const moon = new THREE.DirectionalLight(0xd0e8ff, 1.05);
 moon.position.set(-5.5, 11, 4.5);
 scene.add(moon);
-const rim = new THREE.DirectionalLight(0x4a6a9a, 0.18);
+const rim = new THREE.DirectionalLight(0x7a9ec8, 0.42);
 rim.position.set(8, 4, -6);
 scene.add(rim);
+const fill = new THREE.DirectionalLight(0xa8c8e8, 0.22);
+fill.position.set(2, 6, 8);
+scene.add(fill);
 
 const ground = new THREE.Mesh(
   new THREE.CircleGeometry(14, 48),
   new THREE.MeshStandardMaterial({
-    color: 0x060a09,
-    roughness: 0.97,
+    color: 0x101c18,
+    roughness: 0.94,
     metalness: 0,
   })
 );
@@ -62,9 +67,9 @@ baseGeom.translate(0, 0.275, 0);
 const inst = new THREE.InstancedMesh(
   baseGeom,
   new THREE.MeshStandardMaterial({
-    color: 0x2d6b45,
+    color: 0x3d8558,
     side: THREE.DoubleSide,
-    roughness: 0.72,
+    roughness: 0.68,
     metalness: 0.04,
   }),
   bladeCount
@@ -91,9 +96,9 @@ for (let i = 0; i < bladeCount; i++) {
   dummy.scale.set(s, s * (0.9 + rng(i + 0.6) * 0.4), s);
   dummy.updateMatrix();
   inst.setMatrixAt(i, dummy.matrix);
-  const g = 0.65 + rng(i + 0.7) * 0.28;
-  const c = new THREE.Color(0x1a5a38).multiplyScalar(g);
-  c.lerp(new THREE.Color(0x1e4a58), 0.12 + rng(i + 0.8) * 0.1);
+  const g = 0.72 + rng(i + 0.7) * 0.26;
+  const c = new THREE.Color(0x2a6b42).multiplyScalar(g);
+  c.lerp(new THREE.Color(0x2a5568), 0.08 + rng(i + 0.8) * 0.08);
   inst.setColorAt(i, c);
 }
 inst.instanceMatrix.needsUpdate = true;
