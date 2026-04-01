@@ -11,6 +11,9 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <script>
+      window.MEADOW_API_BASE = "";
+    </script>
   </head>
   <body>
     <div id="canvas-wrap" aria-hidden="true"></div>
@@ -30,8 +33,8 @@
         草が生える
       </h1>
       <p class="lede">
-        <strong>GitHub ユーザー名</strong>を入れると、公開データから<strong>あなたのコミット</strong>を集計し、<strong>土地の広さ</strong>と<strong>草の量</strong>が変わります（OAuth
-        なし・公開 API のみ）。録画用に視点はゆっくり回転。手動はドラッグ。静止画は
+        <strong>OAuth でログイン</strong>すると、<strong>Contribution Calendar</strong>（過去約1年）に基づいて畑が育ちます（下の Worker URL を設定したとき）。ログインなしでは、<strong>ユーザー名</strong>から公開
+        API でコミットを集計します。録画用に視点はゆっくり回転。手動はドラッグ。静止画は
         <code>?noRotate=1</code>。
       </p>
       <form id="gh-form" class="gh-form" action="#" method="get" aria-label="GitHub ユーザーで畑を表示">
@@ -60,8 +63,10 @@
         <button class="gh-form__submit" type="submit">自分の畑を見る</button>
       </form>
       <p id="activity-status" class="activity-status" aria-live="polite"></p>
-      <nav class="actions" aria-label="外部リンク">
+      <nav class="actions" aria-label="外部リンクと OAuth">
         <a class="btn" href="https://github.com/" rel="noreferrer">GitHub</a>
+        <a id="meadow-login" class="btn" href="#" style="display: none">GitHub でログイン（Contribution）</a>
+        <a id="meadow-logout" class="btn btn--ghost" href="#" style="display: none">ログアウト</a>
         <a class="btn btn--ghost" href="#terminal">ヒントへ</a>
       </nav>
     </main>
@@ -75,6 +80,7 @@
         <p><span class="cmd">$</span> <span class="kw">cat</span> ./query-hint.txt</p>
         <p class="out muted"># ユーザー名のみ: 公開リポを走査しコミットが最大のリポを自動選択</p>
         <p class="out muted"># リポ指定: <code>?repo=owner/name&amp;user=あなた</code></p>
+        <p class="out muted"># OAuth: Cloudflare Worker の URL を <code>MEADOW_API_BASE</code> に設定</p>
         <p class="out">例: <code>?user=octocat</code> または <code>?repo=torvalds/linux&amp;user=torvalds</code></p>
         <p>
           <span class="cmd">$</span> <span class="kw">open</span>
@@ -109,6 +115,26 @@
             } catch (err) {}
             window.location.search = q.toString();
           });
+        }
+        var raw = window.MEADOW_API_BASE;
+        var api =
+          typeof raw === "string" && raw.trim()
+            ? raw.replace(/\/$/, "")
+            : "";
+        if (api) {
+          var here = location.href.split("#")[0];
+          var login = document.getElementById("meadow-login");
+          var logout = document.getElementById("meadow-logout");
+          if (login) {
+            login.style.display = "inline-flex";
+            login.href =
+              api + "/auth/github?return_to=" + encodeURIComponent(here);
+          }
+          if (logout) {
+            logout.style.display = "inline-flex";
+            logout.href =
+              api + "/auth/logout?return_to=" + encodeURIComponent(here);
+          }
         }
       })();
     </script>

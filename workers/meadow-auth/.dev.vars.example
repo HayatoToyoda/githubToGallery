@@ -1,0 +1,10 @@
+# wrangler dev 用。コピーして .dev.vars にリネームして編集する。
+# https://developers.cloudflare.com/workers/wrangler/configuration/#secrets
+
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+SESSION_SECRET=
+
+# カンマ区切り（CORS）。例:
+# ALLOWED_ORIGINS=http://127.0.0.1:8080,http://localhost:8080
+ALLOWED_ORIGINS=

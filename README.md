@@ -16,20 +16,73 @@
 
 撮影手順・`ffmpeg` 例は **[meadow/CAPTURE.md](meadow/CAPTURE.md)** を参照。
 
-### GitHub 活動と草（コミット数のみ）
+### GitHub 活動と草（データソース）
 
-**狙い**: **リポジトリのコミット数**に応じて **土地が広がり草が増える**「畑」を、README / Pages から楽しめるようにする。
+**狙い**: **コミット／Contribution**に応じて **土地が広がり草が増える**「畑」を、README / Pages から楽しめるようにする。
 
-**体験（`meadow/` のフォーム）**: **GitHub ユーザー名**を入力して「自分の畑を見る」と、**OAuth なし**で公開 API からデータを取りにいきます。
+**優先順位（`meadow/main.js`）**
+
+1. **OAuth + GraphQL（Contribution Calendar）** — [`workers/meadow-auth`](workers/meadow-auth) をデプロイし、[`meadow/index.html`](meadow/index.html) の `window.MEADOW_API_BASE` に Worker のオリジンを書いたとき。ログイン済みなら **過去約1年の `totalContributions`** を使用。  
+2. **公開 REST API** — URL またはフォームで **`?user=` / `?repo=`** を指定したとき（[meadow/github-activity.js](meadow/github-activity.js)）。
+
+**公開 API の挙動**
 
 - **ユーザー名のみ**: 同名リポジトリ（`user/user`）と、公開リポジトリ一覧から最大 **12 件**を試し、**あなたのコミット数が最も多いリポ**を自動選択（[contributors](https://docs.github.com/en/rest/metrics/statistics) の `total`）。  
 - **リポジトリも指定**（`owner/name`）: そのリポだけを使い、任意で **`&user=`** により **特定ユーザーのコミット**に限定。  
 - **リポジトリだけ**（`?repo=` のみ）: そのリポの **全 contributors 合計コミット**。  
-- **OAuth・トークン**: 現状は未使用（将来、非公開活動や正確な contribution カレンダーには GitHub App / Actions が必要）。  
-- クエリなし: **デモ用の固定コミット数相当**で小さな大地を表示。  
+- クエリなし: **デモ用の固定コミット数相当**。  
 - 認証なし API には **レート制限**があります。統計が未生成のときは **HTTP 202** でリトライします。
 
-**これから**: GitHub Actions で JSON を生成する、テンプレート化、README 埋め込みなど（[meadow/github-activity.js](meadow/github-activity.js)、[meadow/main.js](meadow/main.js)）。
+---
+
+## OAuth + Cloudflare Worker（Contribution Calendar）
+
+GitHub Pages だけでは OAuth の **client secret** を安全に保持できないため、**[workers/meadow-auth](workers/meadow-auth)** に Worker を置きます（フローは [Authorizing OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps) と同型）。
+
+### 1. GitHub で OAuth App を作成
+
+1. GitHub → **Settings → Developer settings → OAuth Apps → New**.  
+2. **Authorization callback URL**: デプロイ後の Worker に合わせて  
+   `https://<あなたのWorkerホスト>/auth/github/callback`  
+   （ローカル検証時は `http://127.0.0.1:8787/auth/github/callback` などを **別 OAuth App** か同一 App に追加）。  
+3. **Scopes**: `read:user`（GraphQL の `viewer.contributionsCollection` 用）。  
+4. **Client ID / Client Secret** を控える（リポジトリにコミットしない）。
+
+### 2. Cloudflare にシークレットを登録
+
+`workers/meadow-auth` で:
+
+```bash
+cd workers/meadow-auth && npm install
+npx wrangler secret put GITHUB_CLIENT_ID
+npx wrangler secret put GITHUB_CLIENT_SECRET
+npx wrangler secret put SESSION_SECRET
+```
+
+`SESSION_SECRET` はランダムな長い文字列（セッション署名用）。
+
+### 3. 変数 `ALLOWED_ORIGINS`（CORS）
+
+**GitHub Pages のオリジン**（例: `https://hayatotoyoda.github.io`）と **ローカル**（例: `http://127.0.0.1:8080`）を **カンマ区切り**で設定します。`credentials: 'include'` を使うため **具体オリジン**が必須です。
+
+- Dashboard の Worker → **Settings → Variables** で `ALLOWED_ORIGINS` を追加するか、[`wrangler.toml`](workers/meadow-auth/wrangler.toml) の `[vars]` に書く（公開してよい値のみ）。
+
+### 4. デプロイ
+
+```bash
+cd workers/meadow-auth && npx wrangler deploy
+```
+
+表示された Worker URL を [`meadow/index.html`](meadow/index.html) の `window.MEADOW_API_BASE` に設定してコミットするか、ビルド手順で注入します。
+
+### 5. フロント
+
+- `MEADOW_API_BASE` が空のときは OAuth ボタンは非表示で、従来どおり公開 API のみ動作します。  
+- ログイン後は **同一ブラウザ**で `GET /api/contributions` に Cookie が付与され、**Contribution の合計**が畑に反映されます。
+
+詳細は **[workers/meadow-auth/README.md](workers/meadow-auth/README.md)** と **[.dev.vars.example](workers/meadow-auth/.dev.vars.example)** を参照。
+
+**補助**: リポジトリオーナー向けに **GitHub Actions + PAT** で JSON を書き出す方式は、別途 `data/contributions.json` を読む拡張として可能（`GITHUB_TOKEN` 単体では他ユーザーのカレンダーは取得できません）。
 
 ---
 

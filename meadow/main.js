@@ -1,9 +1,17 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resolveGithubActivity } from "./github-activity.js";
+import { fetchOAuthContributionActivity } from "./oauth-contributions.js";
 
 const params = new URLSearchParams(window.location.search);
 const noRotate = params.has("noRotate");
+
+function getMeadowApiBase() {
+  if (typeof globalThis !== "undefined" && globalThis.MEADOW_API_BASE) {
+    return String(globalThis.MEADOW_API_BASE).replace(/\/$/, "");
+  }
+  return "";
+}
 
 /** コミット数から大地の半径（ログスケール） */
 function groundRadiusFromCommits(commits) {
@@ -80,14 +88,32 @@ async function main() {
     params.has("repo") ||
     params.has("r");
 
+  const apiBase = getMeadowApiBase();
+
   let activity = {
     commitCount: 320,
     label: "デモ",
     source: "demo",
   };
   let loadError = null;
+  let oauthUsed = false;
 
-  if (hasQuery) {
+  if (apiBase) {
+    if (statusEl) {
+      statusEl.textContent = "Contribution Calendar（OAuth）を確認しています…";
+    }
+    try {
+      const oa = await fetchOAuthContributionActivity(apiBase);
+      if (oa) {
+        activity = oa;
+        oauthUsed = true;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  if (!oauthUsed && hasQuery) {
     const userOnly =
       (params.has("user") || params.has("u")) &&
       !params.has("repo") &&
@@ -117,8 +143,10 @@ async function main() {
     const stats = `草 ${bladeCount.toLocaleString()} 本 · 大地の半径 ${groundRadius.toFixed(1)}`;
     if (loadError) {
       statusEl.textContent = `${loadError.message} · デモ表示（${stats}）`;
+    } else if (oauthUsed) {
+      statusEl.textContent = `${activity.label} · ${stats}`;
     } else if (!hasQuery) {
-      statusEl.textContent = `${activity.label} · ${stats}。上のフォームに GitHub ユーザー名を入れてください。`;
+      statusEl.textContent = `${activity.label} · ${stats}。フォームでユーザー名を入れるか、OAuth でログインしてください。`;
     } else {
       statusEl.textContent = `${activity.label} · ${stats}`;
     }

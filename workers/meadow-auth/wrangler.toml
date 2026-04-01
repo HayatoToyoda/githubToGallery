@@ -1,0 +1,14 @@
+# Cloudflare にデプロイ後、OAuth App の Callback URL を
+# https://<このWorkerのURL>/auth/github/callback に合わせる。
+# Secrets: wrangler secret put GITHUB_CLIENT_SECRET など（README 参照）
+
+name = "meadow-auth"
+main = "src/index.js"
+compatibility_date = "2024-10-01"
+
+# 例: wrangler secret put GITHUB_CLIENT_ID
+# 例: wrangler secret put GITHUB_CLIENT_SECRET
+# 例: wrangler secret put SESSION_SECRET
+# ALLOWED_ORIGINS はカンマ区切り（CORS）。例: https://hayatotoyoda.github.io,http://localhost:8080
+[vars]
+# ALLOWED_ORIGINS = "https://YOUR_USER.github.io,http://127.0.0.1:8080"
