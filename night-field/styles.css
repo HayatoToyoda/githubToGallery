@@ -126,9 +126,17 @@ body {
 }
 
 .lede {
-  margin: 0 0 28px;
+  margin: 0 0 16px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.activity-status {
+  margin: 0 0 24px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--accent);
+  max-width: 36em;
 }
 
 .actions {

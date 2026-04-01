@@ -14,6 +14,22 @@
 
 撮影手順・`ffmpeg` 例は **[night-field/CAPTURE.md](night-field/CAPTURE.md)** を参照。
 
+### GitHub 活動と草（実験中）
+
+**狙い**: 各ユーザーの **コミットや活動**に応じて草の量が変わり、**README や Pages から「自分の畑」として楽しめる**ようにする。
+
+- **いまできること（ブラウザ・公開 API のみ）**  
+  - `night-field` を開くとき、URL に **`?user=GitHubユーザー名`** を付けると、その人の **公開プロフィール**から粗いスコアを取り、草の本数に反映します。  
+  - **`?repo=オーナー/リポジトリ名&user=ユーザー名`** なら、その **リポジトリにおけるその人のコミット数**（[contributors 統計](https://docs.github.com/en/rest/metrics/statistics?apiVersion=2022-11-28)）を使います。`user` を省略すると **全 contributors の合計コミット**を使います。  
+  - 認証なし API には **レート制限**があります。統計が未生成のときは **HTTP 202** で、自動リトライします。
+
+- **これから足したいもの（みんなが組み込みやすくする方向）**  
+  - **GitHub Actions** で `GITHUB_TOKEN` / GraphQL を使い、**本人の contribution カレンダー相当**を JSON 化して Pages に置く（ブラウザ直叩きより正確）。  
+  - **このリポジトリをテンプレート化**し、fork した人が Actions だけで自分用の畑を更新できるようにする。  
+  - **README に貼るバッジ・iframe** や、**Organization 用の集約ビュー**は要検討。
+
+実装の入口は **[night-field/github-activity.js](night-field/github-activity.js)** と **[night-field/main.js](night-field/main.js)** です。
+
 ---
 
 <p align="center">

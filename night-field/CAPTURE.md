@@ -17,6 +17,11 @@ cd night-field && python3 -m http.server 8080
 
 ブラウザで `http://127.0.0.1:8080/` を開く。
 
+**GitHub 連携を試す例**（公開 API・レート制限あり）:
+
+- `http://127.0.0.1:8080/?user=octocat`
+- `http://127.0.0.1:8080/?repo=torvalds/linux&user=torvalds`
+
 ## `hero.gif`（ループ向け）
 
 1. ウィンドウ幅を README 向けに揃える（目安 **920px** 幅。DevTools でレスポンシブ指定可）。
