@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Night field — 3D</title>
+    <title>Meadow — コミットで広がる大地</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,40 +19,42 @@
       <div class="chrome__dots" aria-hidden="true">
         <span></span><span></span><span></span>
       </div>
-      <p class="chrome__title">viewer — night-field@local</p>
-      <p class="chrome__badge">cinematic</p>
+      <p class="chrome__title">viewer — meadow@local</p>
+      <p class="chrome__badge">daytime</p>
     </header>
 
     <main class="overlay">
-      <p class="eyebrow">cinematic 3d</p>
+      <p class="eyebrow">pop 3d · github</p>
       <h1 class="headline">
-        夜のフィールド<br />
-        実験ログ
+        コミットの大地<br />
+        草が生える
       </h1>
       <p class="lede">
-        README のヒーロー GIF はこのシーンの録画を想定。視点はゆっくり回転します。手動で動かすときはドラッグ。静止画用は URL に
+        リポジトリの<strong>コミット数</strong>に応じて<strong>土地の広さ</strong>と<strong>草の量</strong>が増えます。録画用に視点はゆっくり回転。手動はドラッグ。静止画は
         <code>?noRotate=1</code>。
       </p>
       <p id="activity-status" class="activity-status" aria-live="polite"></p>
       <nav class="actions" aria-label="外部リンク">
         <a class="btn" href="https://github.com/" rel="noreferrer">GitHub</a>
-        <a class="btn btn--ghost" href="#terminal">ターミナルへ</a>
+        <a class="btn btn--ghost" href="#terminal">ヒントへ</a>
       </nav>
     </main>
 
-    <section id="terminal" class="terminal" aria-label="ターミナル風ナビ">
+    <section id="terminal" class="terminal" aria-label="クエリの例">
       <div class="terminal__bar">
         <span class="terminal__prompt">~</span>
-        <span class="terminal__label">zsh — portfolio</span>
+        <span class="terminal__label">zsh — meadow</span>
       </div>
       <div class="terminal__body">
-        <p><span class="cmd">$</span> <span class="kw">cat</span> ./links.txt</p>
-        <p class="out">
-          <a href="https://github.com/">github.com</a>
-          — リポジトリ一覧
+        <p><span class="cmd">$</span> <span class="kw">cat</span> ./query-hint.txt</p>
+        <p class="out muted">
+          # 必須: <code>?repo=owner/name</code>（contributors のコミット数を使用）
         </p>
         <p class="out muted">
-          # 草の量: ?user=octocat または ?repo=torvalds/linux&amp;user=torvalds（公開 API・レート制限あり）
+          # 特定ユーザーのコミットのみ: <code>&amp;user=login</code>
+        </p>
+        <p class="out">
+          例: <code>?repo=torvalds/linux&amp;user=torvalds</code>
         </p>
         <p>
           <span class="cmd">$</span> <span class="kw">open</span>
