@@ -88,7 +88,15 @@ async function main() {
   let loadError = null;
 
   if (hasQuery) {
-    if (statusEl) statusEl.textContent = "GitHub の公開データを読み込み中…";
+    const userOnly =
+      (params.has("user") || params.has("u")) &&
+      !params.has("repo") &&
+      !params.has("r");
+    if (statusEl) {
+      statusEl.textContent = userOnly
+        ? "あなたの公開リポジトリを検索してコミット数を集計しています…"
+        : "GitHub の公開データを読み込み中…";
+    }
     try {
       activity = await resolveGithubActivity(params);
     } catch (err) {
@@ -110,7 +118,7 @@ async function main() {
     if (loadError) {
       statusEl.textContent = `${loadError.message} · デモ表示（${stats}）`;
     } else if (!hasQuery) {
-      statusEl.textContent = `${activity.label} · ${stats}。?repo=owner/name で実データ。`;
+      statusEl.textContent = `${activity.label} · ${stats}。上のフォームに GitHub ユーザー名を入れてください。`;
     } else {
       statusEl.textContent = `${activity.label} · ${stats}`;
     }

@@ -104,8 +104,79 @@ body {
   pointer-events: none;
 }
 
-.overlay .actions {
+.overlay .actions,
+.overlay .gh-form {
   pointer-events: auto;
+}
+
+.gh-form {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 2px dashed rgba(232, 72, 108, 0.45);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 24px rgba(60, 100, 60, 0.08);
+}
+
+.gh-form__label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.gh-form__label + .gh-form__input {
+  margin-bottom: 12px;
+}
+
+.gh-form__input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(42, 122, 90, 0.35);
+  background: #fff;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--fg);
+  box-sizing: border-box;
+}
+
+.gh-form__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 72, 108, 0.15);
+}
+
+.gh-form__input::placeholder {
+  color: #9aaa9a;
+}
+
+.gh-form__submit {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(135deg, #e8486c, #ff8a5c);
+  box-shadow: 0 6px 18px rgba(232, 72, 108, 0.35);
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.gh-form__submit:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.gh-form__submit:active {
+  transform: translateY(0);
 }
 
 .eyebrow {

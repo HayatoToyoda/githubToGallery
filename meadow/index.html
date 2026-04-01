@@ -30,9 +30,35 @@
         草が生える
       </h1>
       <p class="lede">
-        リポジトリの<strong>コミット数</strong>に応じて<strong>土地の広さ</strong>と<strong>草の量</strong>が増えます。録画用に視点はゆっくり回転。手動はドラッグ。静止画は
+        <strong>GitHub ユーザー名</strong>を入れると、公開データから<strong>あなたのコミット</strong>を集計し、<strong>土地の広さ</strong>と<strong>草の量</strong>が変わります（OAuth
+        なし・公開 API のみ）。録画用に視点はゆっくり回転。手動はドラッグ。静止画は
         <code>?noRotate=1</code>。
       </p>
+      <form id="gh-form" class="gh-form" action="#" method="get" aria-label="GitHub ユーザーで畑を表示">
+        <label class="gh-form__label" for="gh-user">GitHub ユーザー名</label>
+        <input
+          class="gh-form__input"
+          id="gh-user"
+          name="user"
+          type="text"
+          inputmode="text"
+          autocomplete="username"
+          maxlength="39"
+          placeholder="あなたの ID（例: octocat）"
+          required
+        />
+        <label class="gh-form__label" for="gh-repo">リポジトリ（任意・owner/name）</label>
+        <input
+          class="gh-form__input"
+          id="gh-repo"
+          name="repo"
+          type="text"
+          placeholder="省略時は公開リポから自動で選択"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <button class="gh-form__submit" type="submit">自分の畑を見る</button>
+      </form>
       <p id="activity-status" class="activity-status" aria-live="polite"></p>
       <nav class="actions" aria-label="外部リンク">
         <a class="btn" href="https://github.com/" rel="noreferrer">GitHub</a>
@@ -47,15 +73,9 @@
       </div>
       <div class="terminal__body">
         <p><span class="cmd">$</span> <span class="kw">cat</span> ./query-hint.txt</p>
-        <p class="out muted">
-          # 必須: <code>?repo=owner/name</code>（contributors のコミット数を使用）
-        </p>
-        <p class="out muted">
-          # 特定ユーザーのコミットのみ: <code>&amp;user=login</code>
-        </p>
-        <p class="out">
-          例: <code>?repo=torvalds/linux&amp;user=torvalds</code>
-        </p>
+        <p class="out muted"># ユーザー名のみ: 公開リポを走査しコミットが最大のリポを自動選択</p>
+        <p class="out muted"># リポ指定: <code>?repo=owner/name&amp;user=あなた</code></p>
+        <p class="out">例: <code>?user=octocat</code> または <code>?repo=torvalds/linux&amp;user=torvalds</code></p>
         <p>
           <span class="cmd">$</span> <span class="kw">open</span>
           <a class="link" href="https://pages.github.com/">pages.github.com</a>
@@ -64,6 +84,34 @@
       </div>
     </section>
 
+    <script>
+      (function () {
+        var form = document.getElementById("gh-form");
+        var userIn = document.getElementById("gh-user");
+        var repoIn = document.getElementById("gh-repo");
+        var p = new URLSearchParams(window.location.search);
+        if (userIn && p.get("user")) userIn.value = p.get("user");
+        if (repoIn && p.get("repo")) repoIn.value = p.get("repo");
+        try {
+          var last = localStorage.getItem("meadow_last_user");
+          if (userIn && last && !p.get("user")) userIn.value = last;
+        } catch (e) {}
+        if (form) {
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var u = (userIn && userIn.value.trim()) || "";
+            var r = (repoIn && repoIn.value.trim()) || "";
+            var q = new URLSearchParams();
+            if (u) q.set("user", u);
+            if (r) q.set("repo", r);
+            try {
+              if (u) localStorage.setItem("meadow_last_user", u);
+            } catch (err) {}
+            window.location.search = q.toString();
+          });
+        }
+      })();
+    </script>
     <script type="importmap">
       {
         "imports": {
