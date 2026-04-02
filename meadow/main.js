@@ -13,11 +13,19 @@ function getMeadowApiBase() {
   return "";
 }
 
-/** コミット数から大地の半径（ログスケール） */
-function groundRadiusFromCommits(commits) {
+/** 畑の外縁（土壌リングの外側・カメラ基準）。成長の上限。 */
+const FIELD_RADIUS_MAX = 17.5;
+/** 地平まで土を薄く延ばす倍率 */
+const HORIZON_SOIL_FACTOR = 1.32;
+
+/**
+ * 活動量（OAuth なら totalContributions、それ以外はコミット相当）から
+ * 「緑＋草が広がる半径」（ログスケール、中心から外へ成長）。
+ */
+function growthRadiusFromActivity(commits) {
   const c = Math.max(0, commits);
-  const Rmin = 4.2;
-  const Rmax = 17.5;
+  const Rmin = 0.75;
+  const Rmax = FIELD_RADIUS_MAX;
   const ref = 85000;
   const t = Math.log1p(c) / Math.log1p(ref);
   return Rmin + (Rmax - Rmin) * Math.min(1, Math.max(0, t));
@@ -27,7 +35,7 @@ function groundRadiusFromCommits(commits) {
 function bladeCountFromCommits(commits, radius) {
   const area = Math.PI * radius * radius;
   const base = Math.round(22 * area + commits * 0.1);
-  return Math.min(9000, Math.max(480, base));
+  return Math.min(9000, Math.max(24, base));
 }
 
 const rng = (s) => {
@@ -35,11 +43,13 @@ const rng = (s) => {
   return x - Math.floor(x);
 };
 
-function buildGrassInstancedMesh(bladeCount, spreadRadius) {
+/**
+ * 中心から円状に広がる草。半径 growthRadius 内に一様（面積）配置。
+ */
+function buildGrassInstancedMesh(bladeCount, growthRadius) {
   const baseGeom = new THREE.PlaneGeometry(0.042, 0.52, 1, 4);
   baseGeom.translate(0, 0.26, 0);
-  const inner = 0.25;
-  const outer = Math.max(inner + 0.2, spreadRadius * 0.94);
+  const grassMaxR = Math.max(0.12, growthRadius * 0.94);
 
   const inst = new THREE.InstancedMesh(
     baseGeom,
@@ -57,7 +67,7 @@ function buildGrassInstancedMesh(bladeCount, spreadRadius) {
   for (let i = 0; i < bladeCount; i++) {
     const a = rng(i) * Math.PI * 2;
     const t = rng(i + 0.1);
-    const r = inner + Math.sqrt(t) * (outer - inner);
+    const r = Math.sqrt(t) * grassMaxR;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     const s = 0.7 + rng(i + 0.2) * 0.85;
@@ -90,9 +100,12 @@ async function main() {
 
   const apiBase = getMeadowApiBase();
 
+  /** 未連携・クエリなしの「育った畑」デモ（ログ曲線がほぼ最大になる活動量） */
+  const DEMO_LUSH_COMMITS = 85000;
+
   let activity = {
-    commitCount: 320,
-    label: "デモ",
+    commitCount: DEMO_LUSH_COMMITS,
+    label: "デモ（育った畑）",
     source: "demo",
   };
   let loadError = null;
@@ -129,18 +142,19 @@ async function main() {
       console.warn(err);
       loadError = err instanceof Error ? err : new Error(String(err));
       activity = {
-        commitCount: 320,
+        commitCount: DEMO_LUSH_COMMITS,
         label: "フォールバック",
         source: "demo",
       };
     }
   }
 
-  const groundRadius = groundRadiusFromCommits(activity.commitCount);
-  const bladeCount = bladeCountFromCommits(activity.commitCount, groundRadius);
+  const growthRadius = growthRadiusFromActivity(activity.commitCount);
+  const bladeCount = bladeCountFromCommits(activity.commitCount, growthRadius);
+  const horizonRadius = FIELD_RADIUS_MAX * HORIZON_SOIL_FACTOR;
 
   if (statusEl) {
-    const stats = `草 ${bladeCount.toLocaleString()} 本 · 大地の半径 ${groundRadius.toFixed(1)}`;
+    const stats = `草 ${bladeCount.toLocaleString()} 本 · 緑の半径 ${growthRadius.toFixed(1)}（畑の端 ${FIELD_RADIUS_MAX.toFixed(1)}）`;
     if (loadError) {
       statusEl.textContent = `${loadError.message} · デモ表示（${stats}）`;
     } else if (oauthUsed) {
@@ -173,15 +187,15 @@ async function main() {
     0.1,
     120
   );
-  const camDist = 3.2 + groundRadius * 0.22;
-  camera.position.set(camDist * 0.65, 1.45 + groundRadius * 0.04, camDist * 0.75);
+  const camDist = 3.2 + FIELD_RADIUS_MAX * 0.22;
+  camera.position.set(camDist * 0.65, 1.45 + FIELD_RADIUS_MAX * 0.04, camDist * 0.75);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
   controls.maxPolarAngle = Math.PI / 2 - 0.06;
   controls.minDistance = 2;
-  controls.maxDistance = 18 + groundRadius * 0.85;
+  controls.maxDistance = 18 + FIELD_RADIUS_MAX * 0.85;
   controls.target.set(0, 0.15, 0);
   controls.autoRotate = !noRotate;
   controls.autoRotateSpeed = 0.28;
@@ -198,19 +212,50 @@ async function main() {
   warm.position.set(6, 3, 12);
   scene.add(warm);
 
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(groundRadius, 56),
-    new THREE.MeshStandardMaterial({
-      color: 0x62a848,
-      roughness: 0.88,
-      metalness: 0,
-    })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  const soilMat = new THREE.MeshStandardMaterial({
+    color: 0x7a5230,
+    roughness: 0.92,
+    metalness: 0,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  });
+  const meadowMat = new THREE.MeshStandardMaterial({
+    color: 0x62a848,
+    roughness: 0.88,
+    metalness: 0,
+  });
 
-  const inst = buildGrassInstancedMesh(bladeCount, groundRadius);
+  const meadowGround = new THREE.Mesh(
+    new THREE.CircleGeometry(growthRadius, 64),
+    meadowMat
+  );
+  meadowGround.rotation.x = -Math.PI / 2;
+  meadowGround.position.y = -0.0005;
+  meadowGround.receiveShadow = true;
+  scene.add(meadowGround);
+
+  if (growthRadius < FIELD_RADIUS_MAX - 0.02) {
+    const soilRing = new THREE.Mesh(
+      new THREE.RingGeometry(growthRadius, FIELD_RADIUS_MAX, 64),
+      soilMat
+    );
+    soilRing.rotation.x = -Math.PI / 2;
+    soilRing.position.y = -0.0012;
+    soilRing.receiveShadow = true;
+    scene.add(soilRing);
+  }
+
+  const horizonRing = new THREE.Mesh(
+    new THREE.RingGeometry(FIELD_RADIUS_MAX, horizonRadius, 48),
+    soilMat
+  );
+  horizonRing.rotation.x = -Math.PI / 2;
+  horizonRing.position.y = -0.0018;
+  horizonRing.receiveShadow = true;
+  scene.add(horizonRing);
+
+  const inst = buildGrassInstancedMesh(bladeCount, growthRadius);
   scene.add(inst);
 
   function onResize() {

@@ -1,6 +1,6 @@
 # githubToGallery — プロジェクト説明（エージェント向け）
 
-この文書は、リポジトリを初めて開く開発者・AI エージェントが **何を目的とし、どのディレクトリが何を担い、データがどう流れるか** を短時間で把握するための「地図」です。デプロイ手順の詳細は [README.md](../README.md) および [workers/meadow-auth/README.md](../workers/meadow-auth/README.md) に任せ、ここでは重複を避けます。**実装の現状スナップショットとツール一覧**は [STATUS_AND_TOOLS.md](STATUS_AND_TOOLS.md) を参照。
+この文書は、リポジトリを初めて開く開発者・AI エージェントが **何を目的とし、どのディレクトリが何を担い、データがどう流れるか** を短時間で把握するための「地図」です。デプロイ手順の詳細は [README.md](../README.md) および [workers/meadow-auth/README.md](../workers/meadow-auth/README.md) に任せ、ここでは重複を避けます。**実装の現状スナップショットとツール一覧**は [STATUS_AND_TOOLS.md](STATUS_AND_TOOLS.md) を参照。**経緯・現在地・展望**は [HISTORY_AND_OUTLOOK.md](HISTORY_AND_OUTLOOK.md) を参照。
 
 ---
 
@@ -52,7 +52,7 @@
 ## 5. データの流れ（スケール）
 
 1. どちらの経路でも、最終的に **1 つの非負の「活動スカラー」**（実装では `commitCount` 相当）を得る。
-2. [`meadow/main.js`](../meadow/main.js) がそれを **大地の半径**と **草のインスタンス数**に変換する（ログスケール＋面積・係数はコード内）。
+2. [`meadow/main.js`](../meadow/main.js) がそれを **緑＋草の半径**（`growthRadiusFromActivity`）と **草のインスタンス数**に変換する。畑の外縁まで土壌リングで囲む（ログスケール＋面積・係数はコード内）。
 
 **優先順位（`main.js` の読み込み順）**
 
@@ -93,7 +93,7 @@ flowchart LR
 | 目的 | 主に触るファイル |
 |------|------------------|
 | 3D の見た目（照明・草・地面・フォグ） | [meadow/main.js](../meadow/main.js)、[meadow/styles.css](../meadow/styles.css) |
-| 活動スカラー → 半径・草の本数の式 | [meadow/main.js](../meadow/main.js) 内の `groundRadiusFromCommits` / `bladeCountFromCommits` |
+| 活動スカラー → 緑の半径・草の本数の式 | [meadow/main.js](../meadow/main.js) 内の `growthRadiusFromActivity` / `bladeCountFromCommits` |
 | 公開 API の取り方・クエリパラメータ | [meadow/github-activity.js](../meadow/github-activity.js) |
 | OAuth 後の Contribution の取り方 | [meadow/oauth-contributions.js](../meadow/oauth-contributions.js) |
 | ログイン URL・`MEADOW_API_BASE` | [meadow/index.html](../meadow/index.html) 先頭の `window.MEADOW_API_BASE` とインラインスクリプト |
@@ -106,6 +106,7 @@ flowchart LR
 
 ## 8. 関連ドキュメント
 
+- [HISTORY_AND_OUTLOOK.md](HISTORY_AND_OUTLOOK.md) — **経緯・現在地・展望**（議論の流れと今後の伸ばしどころ）
 - [STATUS_AND_TOOLS.md](STATUS_AND_TOOLS.md) — **現在地**（プレースホルダ・任意拡張）と **ツール一覧**
 - [README.md](../README.md) — 利用者向け・Pages ・ OAuth セットアップ手順
 - [meadow/CAPTURE.md](../meadow/CAPTURE.md) — 録画・GIF・スクリーンショット

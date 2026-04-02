@@ -1,7 +1,8 @@
 # githubToGallery
 
 > **プロジェクト全体の説明（目的・構成・データの流れ・エージェント向けの変更ガイド）**: [docs/PROJECT.md](docs/PROJECT.md)  
-> **現在地・ツール一覧**: [docs/STATUS_AND_TOOLS.md](docs/STATUS_AND_TOOLS.md)
+> **現在地・ツール一覧**: [docs/STATUS_AND_TOOLS.md](docs/STATUS_AND_TOOLS.md)  
+> **経緯・展望**: [docs/HISTORY_AND_OUTLOOK.md](docs/HISTORY_AND_OUTLOOK.md)
 
 自分の GitHub README を更新するためのビジュアル（ヒーロー GIF・3D キャプチャ）と、公開用インタラクティブデモ（**`meadow/`**）をまとめたリポジトリです。リポジトリ名を **`readme-visual-lab`** などへ変えてもよいです（GitHub の Rename。ローカルフォルダ名は `git remote` と揃えると管理しやすいです）。
 
@@ -13,7 +14,7 @@
 |------|------|
 | **ひと言コンセプト** | **コミットの大地** — コミットが増えるほど土地が広がり、草が生える。 |
 | **記憶に残す主役** | **太陽光の下の緑**（明るい半球光＋太陽風ディレクショナル、淡いフォグ）。 |
-| **シーン案（採用）** | **`meadow/`** の Three.js フィールド。コミット数で **大地の半径**と**草の本数**が変わる。 |
+| **シーン案（採用）** | **`meadow/`** の Three.js フィールド。活動量で **緑が広がる半径**と**草の本数**が変わり、外周は土壌（OAuth 時は過去約1年の Contribution 合計に連動）。 |
 | **`assets/hero.gif`** | **動きの「ドカン」**：録画用。README 先頭のヒーロー。 |
 | **`assets/3d-showcase.png`** | **キービジュアルの静止画**：同シーンのスクリーンショットなど。 |
 
