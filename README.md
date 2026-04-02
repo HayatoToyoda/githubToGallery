@@ -1,5 +1,8 @@
 # githubToGallery
 
+> **プロジェクト全体の説明（目的・構成・データの流れ・エージェント向けの変更ガイド）**: [docs/PROJECT.md](docs/PROJECT.md)  
+> **現在地・ツール一覧**: [docs/STATUS_AND_TOOLS.md](docs/STATUS_AND_TOOLS.md)
+
 自分の GitHub README を更新するためのビジュアル（ヒーロー GIF・3D キャプチャ）と、公開用インタラクティブデモ（**`meadow/`**）をまとめたリポジトリです。リポジトリ名を **`readme-visual-lab`** などへ変えてもよいです（GitHub の Rename。ローカルフォルダ名は `git remote` と揃えると管理しやすいです）。
 
 **移行メモ**: デモのパスは **`night-field/` から `meadow/` に変更**しました。旧 URL のブックマークは切れます。
@@ -83,6 +86,27 @@ cd workers/meadow-auth && npx wrangler deploy
 詳細は **[workers/meadow-auth/README.md](workers/meadow-auth/README.md)** と **[.dev.vars.example](workers/meadow-auth/.dev.vars.example)** を参照。
 
 **補助**: リポジトリオーナー向けに **GitHub Actions + PAT** で JSON を書き出す方式は、別途 `data/contributions.json` を読む拡張として可能（`GITHUB_TOKEN` 単体では他ユーザーのカレンダーは取得できません）。
+
+### README 埋め込み用 SVG カード（公開 API）
+
+[`workers/meadow-auth`](workers/meadow-auth) をデプロイすると、**[github-readme-stats](https://github.com/anuraghazra/github-readme-stats)** のように README へ **動的な SVG 画像**を埋め込めます（GitHub の **公開** `GET /users/{username}` を Worker が取得して SVG を返します）。
+
+```html
+<img
+  src="https://<Workerのホスト>/api/readme-card.svg?user=HayatoToyoda&amp;theme=tokyonight&amp;show_icons=true"
+  width="450"
+  alt="GitHub stats"
+/>
+```
+
+| クエリ | 説明 |
+|--------|------|
+| `user` または `username` | **必須** — GitHub ログイン名 |
+| `theme` | `tokyonight`（既定） / `dark` / `default` / `radical` |
+| `show_icons` | `true`（既定） / `false` |
+| `width` | 横幅ピクセル（300〜600、既定 450） |
+
+トラフィックが多い場合は、Worker の Secret に **`GITHUB_TOKEN`**（read 系の PAT）を入れると **GitHub API のレート制限**を緩和できます（任意）。
 
 ---
 

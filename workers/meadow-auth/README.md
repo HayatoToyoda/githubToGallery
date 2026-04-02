@@ -26,10 +26,15 @@ npx wrangler dev
 
 | Path | 説明 |
 |------|------|
+| `GET /api/readme-card.svg` | **README 埋め込み用 SVG**。`?user=`（必須）、`theme`、`show_icons`、`width`。公開 GitHub Users API を使用。OAuth・CORS 不要。 |
 | `GET /auth/github` | `return_to` クエリで戻り先（ALLOWED_ORIGINS 内のみ） |
 | `GET /auth/github/callback` | GitHub からのコールバック |
 | `GET /api/contributions` | Cookie セッション必須。GraphQL の JSON をそのまま返す |
 | `GET /auth/logout` | セッション削除 |
+
+### README カード用の任意 Secret
+
+`GET /api/readme-card.svg` は認証なしでも動作しますが、**未認証の GitHub API は時間あたりの呼び出し上限が厳しい**です。負荷が高い場合は `wrangler secret put GITHUB_TOKEN` で **read 権限の PAT** を登録してください（公開ユーザー情報の取得のみに使います）。
 
 ## セキュリティ
 

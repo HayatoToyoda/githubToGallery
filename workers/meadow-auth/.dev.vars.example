@@ -5,6 +5,9 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 SESSION_SECRET=
 
+# 任意: README カード (/api/readme-card.svg) の GitHub API レート制限緩和用（read 系 PAT）
+# GITHUB_TOKEN=
+
 # カンマ区切り（CORS）。例:
 # ALLOWED_ORIGINS=http://127.0.0.1:8080,http://localhost:8080
 ALLOWED_ORIGINS=

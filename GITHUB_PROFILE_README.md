@@ -44,6 +44,17 @@
 </p>
 -->
 
+<!-- githubToGallery の meadow-auth Worker をデプロイした場合: 動的 SVG カード（公開ユーザー情報） -->
+<!--
+<p align="center">
+  <img
+    src="https://<YOUR_WORKER_HOST>/api/readme-card.svg?user=YOUR_USERNAME&amp;theme=tokyonight&amp;show_icons=true"
+    width="450"
+    alt="GitHub stats"
+  />
+</p>
+-->
+
 ---
 
 #### Links

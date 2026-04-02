@@ -1,8 +1,15 @@
 /**
  * GitHub OAuth + GraphQL Contribution Calendar 用 Cloudflare Worker
  * Secrets: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET
+ * Optional: GITHUB_TOKEN — README カード用の GitHub API レート制限緩和（read-only PAT）
  * Vars: ALLOWED_ORIGINS (comma-separated, required for CORS)
  */
+
+import {
+  buildReadmeCardSvg,
+  buildErrorCardSvg,
+  isValidGitHubUsername,
+} from "./readme-card.js";
 
 const COOKIE = "meadow_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -134,6 +141,9 @@ export default {
     }
 
     try {
+      if (path === "/api/readme-card.svg" && request.method === "GET") {
+        return handleReadmeCard(request, env, url);
+      }
       if (path === "/auth/github") {
         return handleAuthStart(request, env, url);
       }
@@ -158,6 +168,85 @@ export default {
     return new Response("meadow-auth: not found", { status: 404 });
   },
 };
+
+const README_CARD_UA = "githubToGallery/meadow-auth-readme-card";
+
+async function handleReadmeCard(request, env, url) {
+  const userParam = url.searchParams.get("user") || url.searchParams.get("username");
+  const theme = url.searchParams.get("theme") || "tokyonight";
+  const showIcons = url.searchParams.get("show_icons") !== "false";
+  const widthRaw = url.searchParams.get("width");
+  const width = widthRaw ? parseInt(widthRaw, 10) : 450;
+
+  const svgOpts = { theme, width: Number.isFinite(width) ? width : 450 };
+
+  if (!userParam || !isValidGitHubUsername(userParam)) {
+    const svg = buildErrorCardSvg("Invalid or missing user parameter", svgOpts);
+    return new Response(svg, {
+      status: 400,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const headers = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": README_CARD_UA,
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (env.GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  }
+
+  const apiUrl = `https://api.github.com/users/${encodeURIComponent(userParam)}`;
+  const res = await fetch(apiUrl, { headers });
+
+  if (res.status === 404) {
+    const svg = buildErrorCardSvg("User not found", svgOpts);
+    return new Response(svg, {
+      status: 404,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  if (res.status === 403) {
+    const svg = buildErrorCardSvg("GitHub API rate limit — retry later or set GITHUB_TOKEN", svgOpts);
+    return new Response(svg, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
+
+  if (!res.ok) {
+    const svg = buildErrorCardSvg(`GitHub API error (${res.status})`, svgOpts);
+    return new Response(svg, {
+      status: 502,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const user = await res.json();
+  const svg = buildReadmeCardSvg(user, { theme, showIcons, width: svgOpts.width });
+
+  return new Response(svg, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/svg+xml; charset=utf-8",
+      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+    },
+  });
+}
 
 function redirect(location, headers = {}) {
   return new Response(null, { status: 302, headers: { Location: location, ...headers } });
