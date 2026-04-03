@@ -2,7 +2,8 @@
 
 > **プロジェクト全体の説明（目的・構成・データの流れ・エージェント向けの変更ガイド）**: [docs/PROJECT.md](docs/PROJECT.md)  
 > **現在地・ツール一覧**: [docs/STATUS_AND_TOOLS.md](docs/STATUS_AND_TOOLS.md)  
-> **経緯・展望**: [docs/HISTORY_AND_OUTLOOK.md](docs/HISTORY_AND_OUTLOOK.md)
+> **経緯・展望**: [docs/HISTORY_AND_OUTLOOK.md](docs/HISTORY_AND_OUTLOOK.md)  
+> **エージェント向け（Git/PR 運用）**: [AGENTS.md](AGENTS.md)
 
 自分の GitHub README を更新するためのビジュアル（ヒーロー GIF・3D キャプチャ）と、公開用インタラクティブデモ（**`meadow/`**）をまとめたリポジトリです。リポジトリ名を **`readme-visual-lab`** などへ変えてもよいです（GitHub の Rename。ローカルフォルダ名は `git remote` と揃えると管理しやすいです）。
 
