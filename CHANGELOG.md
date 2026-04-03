@@ -11,3 +11,4 @@
 ### ドキュメント
 
 - README / PROJECT / HISTORY / STATUS / CLAUDE を球体前提に更新。
+- **エージェント向け**: `.cursor/rules/git-pr-workflow.mdc`（常時適用）、`AGENTS.md`、CLAUDE / PROJECT / README に **ブランチ→PR→マージ**運用を明記。

@@ -48,6 +48,12 @@ githubToGallery/
 
 セッション: `meadow_session` Cookie（HMAC-SHA256 署名・HttpOnly・Secure・SameSite=None・7日間）
 
+## Git / GitHub 運用（必須）
+
+- **`main` への直接コミット・直接プッシュはしない**。変更は **`feature/*` / `fix/*` / `chore/*`** などのブランチで行う。
+- **`main` に取り込む前に必ず Pull Request を開く**（`gh pr create` 等）。マージは PR 経由のみ。
+- 詳細は **`.cursor/rules/git-pr-workflow.mdc`** およびルート **`AGENTS.md`** を参照。
+
 ## Development Commands
 
 ### フロントエンド（meadow/）
