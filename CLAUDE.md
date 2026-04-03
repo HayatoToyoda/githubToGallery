@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**githubToGallery / Meadow** — GitHub コミット数を元に Three.js で草原（大地＋草）を生成する静的 Web アプリ＋ Cloudflare Worker バックエンド。
+**githubToGallery / Meadow** — GitHub コミット数を元に Three.js で **球体の大地＋草**を生成する静的 Web アプリ＋ Cloudflare Worker バックエンド。
 
-- コミット数が多いほど大地の半径と草の本数が対数スケールで増える
+- 活動量が多いほど **北極からの緑の球冠角**（最大 π で球全体）と草の本数が増える（ログスケール）。ロード時に球冠角・草の本数をイージングで伸ばす
 - ログイン不要モード: GitHub 公開 API でコミット数を集計
 - OAuth モード: Cloudflare Worker 経由で GitHub GraphQL Contribution Calendar（過去約1年）を取得
 
@@ -34,8 +34,8 @@ githubToGallery/
 データフロー（`main.js`）:
 1. `window.MEADOW_API_BASE` が設定されていれば `fetchOAuthContributionActivity` を試行
 2. OAuth 未使用 かつ URL パラメータあり（`?user=` / `?repo=`）なら `resolveGithubActivity` を呼ぶ
-3. どちらもなければデモ値（320コミット）
-4. `groundRadiusFromCommits` → `bladeCountFromCommits` でスケール計算し Three.js シーンを構築
+3. どちらもなければデモ値（十分大きい活動量で「育った畑」）
+4. `growthAngleFromActivity` → `bladeCountFromCommits` でスケール計算し **球体**シーンを構築（土壌はシェーダで茶／緑混合）
 
 ### Cloudflare Worker (workers/meadow-auth/)
 

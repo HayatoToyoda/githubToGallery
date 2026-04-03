@@ -52,7 +52,7 @@
 ## 5. データの流れ（スケール）
 
 1. どちらの経路でも、最終的に **1 つの非負の「活動スカラー」**（実装では `commitCount` 相当）を得る。
-2. [`meadow/main.js`](../meadow/main.js) がそれを **緑＋草の半径**（`growthRadiusFromActivity`）と **草のインスタンス数**に変換する。畑の外縁まで土壌リングで囲む（ログスケール＋面積・係数はコード内）。
+2. [`meadow/main.js`](../meadow/main.js) がそれを **北極からの球冠の半角 α**（`growthAngleFromActivity`、最大 π で球全体が緑）と **草のインスタンス数**に変換する。**球体**の土壌は `MeshStandardMaterial` の `onBeforeCompile` で茶／緑を混合。ロード時に α と草の表示本数を **イージングで 0→目標**まで伸ばす（ログスケール＋面積・係数はコード内）。
 
 **優先順位（`main.js` の読み込み順）**
 
@@ -93,7 +93,7 @@ flowchart LR
 | 目的 | 主に触るファイル |
 |------|------------------|
 | 3D の見た目（照明・草・地面・フォグ） | [meadow/main.js](../meadow/main.js)、[meadow/styles.css](../meadow/styles.css) |
-| 活動スカラー → 緑の半径・草の本数の式 | [meadow/main.js](../meadow/main.js) 内の `growthRadiusFromActivity` / `bladeCountFromCommits` |
+| 活動スカラー → 球冠角・草の本数の式 | [meadow/main.js](../meadow/main.js) 内の `growthAngleFromActivity` / `bladeCountFromCommits` |
 | 公開 API の取り方・クエリパラメータ | [meadow/github-activity.js](../meadow/github-activity.js) |
 | OAuth 後の Contribution の取り方 | [meadow/oauth-contributions.js](../meadow/oauth-contributions.js) |
 | ログイン URL・`MEADOW_API_BASE` | [meadow/index.html](../meadow/index.html) 先頭の `window.MEADOW_API_BASE` とインラインスクリプト |

@@ -30,9 +30,9 @@
 
 ### 1.5 直近の実装（meadow）
 
-- **緑の半径** `growthRadiusFromActivity(commits)` を導入し、**活動量に応じて緑の円が小さく／大きく**なる（ログスケール、外周上限は `FIELD_RADIUS_MAX`）。
-- **地面**: `growthRadius` 内を **緑**、その外から畑の端まで **茶色リング**、さらに **地平延長**の茶色リングで「水色だけ」の領域を減らす。
-- **草**: ドーナツ状配置をやめ、**緑の半径内に一様（面積）配置**し、中心から外へ広がる見え方に寄せた。
+- **平面円盤**から **球体大地**へ変更。北極（+Y）を起点に **球冠の半角 α**（`growthAngleFromActivity`）が **0〜π** まで広がり、**π で球全体が緑**になる（活動量はログスケールで正規化）。
+- **土壌**: `MeshStandardMaterial` の `onBeforeCompile` で **世界座標の法線**に応じて茶／緑を混合。
+- **草**: 球面上に一様サンプルし **極からの角でソート**。`InstancedMesh.count` とシェーダの `uAlpha` を **ロード時イージング**で 0→目標まで伸ばし、「広がる」導入を付与。**軌道カメラのズーム**で全体／局所を観察可能。
 
 ---
 
@@ -42,7 +42,7 @@
 |------|------|
 | **目的** | README 素材 + **OAuth / REST / デモ** に応じた活動連動の Three.js 畑。 |
 | **データ** | OAuth 優先で `totalContributions`（`oauth-contributions.js`）。URL クエリで公開 REST。未指定・未 OAuth は **デモで「育った畑」**。 |
-| **3D** | `growthRadius` + 土壌リング + 地平リング、草は円内配置（[`meadow/main.js`](../meadow/main.js)）。 |
+| **3D** | 球体＋球冠シェーダ＋球面草＋導入アニメ（[`meadow/main.js`](../meadow/main.js)）。 |
 | **Worker** | OAuth、GraphQL プロキシ、**README 用 SVG カード**（[`workers/meadow-auth`](../workers/meadow-auth/)）。 |
 | **ドキュメント** | PROJECT / STATUS_AND_TOOLS / 本書。README に PROJECT・STATUS への案内。 |
 | **運用上のプレースホルダ** | `assets/` の GIF・PNG 未配置の可能性、README の Live demo の `YOUR_USERNAME`、`MEADOW_API_BASE` 未設定時は OAuth 非表示。 |
@@ -55,8 +55,8 @@
 
 ### 3.1 体験・演出
 
-- **入場時アニメーション**: 緑の半径を **0 から目標値へ補間**し、「広がっていく」瞬間を強調する（現状は静的スナップショット）。
-- **ビジュアル調整**: 土・緑の色、フォグ、カメラ距離のさらなる調整。
+- **ビジュアル調整**: 土・緑の色、フォグ、球半径 `SPHERE_RADIUS`、カメラ距離のさらなる調整。
+- **草の揺れ**: 球面に沿った風表現（現状はグループ全体のわずかな回転）の洗練。
 
 ### 3.2 プロダクト・運用
 

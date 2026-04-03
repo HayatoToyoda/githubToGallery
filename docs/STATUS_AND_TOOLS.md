@@ -9,7 +9,7 @@
 | 項目 | 状態 |
 |------|------|
 | **目的** | GitHub README 用ビジュアル（GIF・静止画）と、活動量に連動する **`meadow/`** の Web デモを同一リポジトリで管理する。 |
-| **静的デモ** | `meadow/` — Three.js（CDN の `three@0.160.0`）＋ ES modules。活動スカラーは OAuth（任意）→ 公開 REST → デモ値の優先順位で取得。 |
+| **静的デモ** | `meadow/` — Three.js（CDN の `three@0.160.0`）＋ ES modules。**球体**の土壌と球冠の緑、草は球面配置。活動スカラーは OAuth（任意）→ 公開 REST → デモ値の優先順位で取得。 |
 | **OAuth 層** | `workers/meadow-auth` — Cloudflare Worker。未デプロイ・未設定でもフロントは公開 API モードで動作可能。 |
 | **README 動的画像** | 同一 Worker の **`GET /api/readme-card.svg`** — 公開ユーザー API から SVG カードを生成し、[github-readme-stats](https://github.com/anuraghazra/github-readme-stats) のように `<img>` で README に埋め込める（[README.md](../README.md) の該当節を参照）。 |
 | **ドキュメント** | 利用者向け [README.md](../README.md)、全体マップ [PROJECT.md](PROJECT.md)、本書、録画 [../meadow/CAPTURE.md](../meadow/CAPTURE.md)、Worker [../workers/meadow-auth/README.md](../workers/meadow-auth/README.md)。 |

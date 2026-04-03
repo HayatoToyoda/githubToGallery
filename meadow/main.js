@@ -13,28 +13,25 @@ function getMeadowApiBase() {
   return "";
 }
 
-/** 畑の外縁（土壌リングの外側・カメラ基準）。成長の上限。 */
-const FIELD_RADIUS_MAX = 17.5;
-/** 地平まで土を薄く延ばす倍率 */
-const HORIZON_SOIL_FACTOR = 1.32;
+/** ワールド座標系での球の半径（曲率の見え方） */
+const SPHERE_RADIUS = 8;
 
 /**
- * 活動量（OAuth なら totalContributions、それ以外はコミット相当）から
- * 「緑＋草が広がる半径」（ログスケール、中心から外へ成長）。
+ * 活動量から北極（+Y）からの球冠の半角 α（0〜π）。
+ * π で球体全体が緑。
  */
-function growthRadiusFromActivity(commits) {
+function growthAngleFromActivity(commits) {
   const c = Math.max(0, commits);
-  const Rmin = 0.75;
-  const Rmax = FIELD_RADIUS_MAX;
   const ref = 85000;
   const t = Math.log1p(c) / Math.log1p(ref);
-  return Rmin + (Rmax - Rmin) * Math.min(1, Math.max(0, t));
+  return Math.min(1, Math.max(0, t)) * Math.PI;
 }
 
-/** 面積とコミット数から草の本数 */
-function bladeCountFromCommits(commits, radius) {
-  const area = Math.PI * radius * radius;
-  const base = Math.round(22 * area + commits * 0.1);
+/** 球冠の表面積 2πR²(1-cos α) に基づく草の本数 */
+function bladeCountFromCommits(commits, R) {
+  const alpha = growthAngleFromActivity(commits);
+  const capArea = 2 * Math.PI * R * R * (1 - Math.cos(Math.min(alpha, Math.PI)));
+  const base = Math.round(18 * capArea + commits * 0.008);
   return Math.min(9000, Math.max(24, base));
 }
 
@@ -43,13 +40,16 @@ const rng = (s) => {
   return x - Math.floor(x);
 };
 
+function easeOutCubic(t) {
+  return 1 - (1 - t) ** 3;
+}
+
 /**
- * 中心から円状に広がる草。半径 growthRadius 内に一様（面積）配置。
+ * 球面上に一様分布した草。極からの角 θ でソートし、inst.count で成長を表現。
  */
-function buildGrassInstancedMesh(bladeCount, growthRadius) {
+function buildGrassSphereInstancedMesh(bladeCount, R) {
   const baseGeom = new THREE.PlaneGeometry(0.042, 0.52, 1, 4);
   baseGeom.translate(0, 0.26, 0);
-  const grassMaxR = Math.max(0.12, growthRadius * 0.94);
 
   const inst = new THREE.InstancedMesh(
     baseGeom,
@@ -62,21 +62,40 @@ function buildGrassInstancedMesh(bladeCount, growthRadius) {
     bladeCount
   );
 
+  const samples = [];
+  for (let i = 0; i < bladeCount; i++) {
+    const u = rng(i);
+    const v = rng(i + 0.1);
+    const theta = Math.acos(2 * u - 1);
+    const phi = 2 * Math.PI * v;
+    const sinT = Math.sin(theta);
+    const dir = new THREE.Vector3(
+      sinT * Math.cos(phi),
+      Math.cos(theta),
+      sinT * Math.sin(phi)
+    );
+    samples.push({ dir, theta });
+  }
+  samples.sort((a, b) => a.theta - b.theta);
+
   const dummy = new THREE.Object3D();
+  const up = new THREE.Vector3(0, 1, 0);
+  const qBase = new THREE.Quaternion();
+  const qRand = new THREE.Quaternion();
 
   for (let i = 0; i < bladeCount; i++) {
-    const a = rng(i) * Math.PI * 2;
-    const t = rng(i + 0.1);
-    const r = Math.sqrt(t) * grassMaxR;
-    const x = Math.cos(a) * r;
-    const z = Math.sin(a) * r;
-    const s = 0.7 + rng(i + 0.2) * 0.85;
-    dummy.position.set(x, 0, z);
-    dummy.rotation.set(
-      (rng(i + 0.3) - 0.5) * 0.4,
-      rng(i + 0.4) * Math.PI * 2,
-      (rng(i + 0.5) - 0.5) * 0.25
+    const { dir } = samples[i];
+    dummy.position.copy(dir).multiplyScalar(R);
+    qBase.setFromUnitVectors(up, dir);
+    qRand.setFromEuler(
+      new THREE.Euler(
+        (rng(i + 0.3) - 0.5) * 0.35,
+        rng(i + 0.4) * Math.PI * 2,
+        (rng(i + 0.5) - 0.5) * 0.22
+      )
     );
+    dummy.quaternion.copy(qBase).multiply(qRand);
+    const s = 0.7 + rng(i + 0.2) * 0.85;
     dummy.scale.set(s, s * (0.92 + rng(i + 0.6) * 0.35), s);
     dummy.updateMatrix();
     inst.setMatrixAt(i, dummy.matrix);
@@ -87,7 +106,45 @@ function buildGrassInstancedMesh(bladeCount, growthRadius) {
   }
   inst.instanceMatrix.needsUpdate = true;
   if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+  inst.count = 0;
   return inst;
+}
+
+function createSphereGroundMaterial() {
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.88,
+    metalness: 0,
+  });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uAlpha = { value: 0 };
+    shader.uniforms.uGrassColor = { value: new THREE.Color(0x62a848) };
+    shader.uniforms.uSoilColor = { value: new THREE.Color(0x7a5230) };
+    mat.userData.shaderUniforms = shader.uniforms;
+
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vWorldPosition;\n"
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <worldpos_vertex>",
+      "#include <worldpos_vertex>\nvWorldPosition = worldPosition.xyz;\n"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vWorldPosition;\nuniform float uAlpha;\nuniform vec3 uGrassColor;\nuniform vec3 uSoilColor;\n"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+      vec3 n = normalize(vWorldPosition);
+      float angleFromNorth = acos(clamp(n.y, -1.0, 1.0));
+      float edge = smoothstep(uAlpha - 0.12, uAlpha + 0.12, angleFromNorth);
+      diffuseColor.rgb = mix(uGrassColor, uSoilColor, edge);
+      `
+    );
+  };
+  return mat;
 }
 
 async function main() {
@@ -100,7 +157,6 @@ async function main() {
 
   const apiBase = getMeadowApiBase();
 
-  /** 未連携・クエリなしの「育った畑」デモ（ログ曲線がほぼ最大になる活動量） */
   const DEMO_LUSH_COMMITS = 85000;
 
   let activity = {
@@ -149,12 +205,12 @@ async function main() {
     }
   }
 
-  const growthRadius = growthRadiusFromActivity(activity.commitCount);
-  const bladeCount = bladeCountFromCommits(activity.commitCount, growthRadius);
-  const horizonRadius = FIELD_RADIUS_MAX * HORIZON_SOIL_FACTOR;
+  const targetAlpha = growthAngleFromActivity(activity.commitCount);
+  const bladeCount = bladeCountFromCommits(activity.commitCount, SPHERE_RADIUS);
+  const alphaDeg = ((targetAlpha / Math.PI) * 180).toFixed(0);
 
   if (statusEl) {
-    const stats = `草 ${bladeCount.toLocaleString()} 本 · 緑の半径 ${growthRadius.toFixed(1)}（畑の端 ${FIELD_RADIUS_MAX.toFixed(1)}）`;
+    const stats = `草 ${bladeCount.toLocaleString()} 本 · 緑の球冠 ~${alphaDeg}°（北極から）`;
     if (loadError) {
       statusEl.textContent = `${loadError.message} · デモ表示（${stats}）`;
     } else if (oauthUsed) {
@@ -179,28 +235,28 @@ async function main() {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x8fd4ff);
-  scene.fog = new THREE.Fog(0xc8e8f8, 28, 95);
+  scene.fog = new THREE.Fog(0xc8e8f8, 18, 85);
 
   const camera = new THREE.PerspectiveCamera(
     50,
     window.innerWidth / window.innerHeight,
     0.1,
-    120
+    200
   );
-  const camDist = 3.2 + FIELD_RADIUS_MAX * 0.22;
-  camera.position.set(camDist * 0.65, 1.45 + FIELD_RADIUS_MAX * 0.04, camDist * 0.75);
+  const camDist = SPHERE_RADIUS * 2.35;
+  camera.position.set(camDist * 0.55, SPHERE_RADIUS * 0.45, camDist * 0.65);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
-  controls.maxPolarAngle = Math.PI / 2 - 0.06;
-  controls.minDistance = 2;
-  controls.maxDistance = 18 + FIELD_RADIUS_MAX * 0.85;
-  controls.target.set(0, 0.15, 0);
+  controls.maxPolarAngle = Math.PI;
+  controls.minDistance = SPHERE_RADIUS * 1.15;
+  controls.maxDistance = SPHERE_RADIUS * 9;
+  controls.target.set(0, 0, 0);
   controls.autoRotate = !noRotate;
   controls.autoRotateSpeed = 0.28;
 
-  const hemi = new THREE.HemisphereLight(0xa8dcff, 0x6a9a3a, 0.88);
+  const hemi = new THREE.HemisphereLight(0xa8dcff, 0x5a5a48, 0.88);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff8e6, 1.42);
   sun.position.set(-8, 18, 10);
@@ -212,51 +268,18 @@ async function main() {
   warm.position.set(6, 3, 12);
   scene.add(warm);
 
-  const soilMat = new THREE.MeshStandardMaterial({
-    color: 0x7a5230,
-    roughness: 0.92,
-    metalness: 0,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
-  });
-  const meadowMat = new THREE.MeshStandardMaterial({
-    color: 0x62a848,
-    roughness: 0.88,
-    metalness: 0,
-  });
-
-  const meadowGround = new THREE.Mesh(
-    new THREE.CircleGeometry(growthRadius, 64),
-    meadowMat
+  const groundMat = createSphereGroundMaterial();
+  const sphereMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(SPHERE_RADIUS, 96, 96),
+    groundMat
   );
-  meadowGround.rotation.x = -Math.PI / 2;
-  meadowGround.position.y = -0.0005;
-  meadowGround.receiveShadow = true;
-  scene.add(meadowGround);
+  sphereMesh.receiveShadow = true;
+  scene.add(sphereMesh);
 
-  if (growthRadius < FIELD_RADIUS_MAX - 0.02) {
-    const soilRing = new THREE.Mesh(
-      new THREE.RingGeometry(growthRadius, FIELD_RADIUS_MAX, 64),
-      soilMat
-    );
-    soilRing.rotation.x = -Math.PI / 2;
-    soilRing.position.y = -0.0012;
-    soilRing.receiveShadow = true;
-    scene.add(soilRing);
-  }
-
-  const horizonRing = new THREE.Mesh(
-    new THREE.RingGeometry(FIELD_RADIUS_MAX, horizonRadius, 48),
-    soilMat
-  );
-  horizonRing.rotation.x = -Math.PI / 2;
-  horizonRing.position.y = -0.0018;
-  horizonRing.receiveShadow = true;
-  scene.add(horizonRing);
-
-  const inst = buildGrassInstancedMesh(bladeCount, growthRadius);
-  scene.add(inst);
+  const grassGroup = new THREE.Group();
+  const inst = buildGrassSphereInstancedMesh(bladeCount, SPHERE_RADIUS);
+  grassGroup.add(inst);
+  scene.add(grassGroup);
 
   function onResize() {
     const w = window.innerWidth;
@@ -268,13 +291,29 @@ async function main() {
   window.addEventListener("resize", onResize);
 
   const clock = new THREE.Clock();
+  let introElapsed = 0;
+  const INTRO_DURATION = 2.85;
 
   function tick() {
+    const dt = clock.getDelta();
+    introElapsed += dt;
+    const progress = Math.min(1, introElapsed / INTRO_DURATION);
+    const eased = easeOutCubic(progress);
+    const currentAlpha = targetAlpha * eased;
+
+    const su = groundMat.userData.shaderUniforms;
+    if (su && su.uAlpha) {
+      su.uAlpha.value = currentAlpha;
+    }
+
+    const frac = (1 - Math.cos(currentAlpha)) / 2;
+    inst.count = Math.max(0, Math.floor(bladeCount * frac));
+
     const t = clock.getElapsedTime();
-    inst.rotation.y = Math.sin(t * 0.1) * 0.028;
-    const wind =
-      Math.sin(t * 0.9) * 0.02 + Math.sin(t * 0.33) * 0.016;
-    inst.rotation.z = wind;
+    grassGroup.rotation.y = Math.sin(t * 0.1) * 0.028;
+    grassGroup.rotation.x =
+      Math.sin(t * 0.9) * 0.018 + Math.sin(t * 0.33) * 0.014;
+
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
