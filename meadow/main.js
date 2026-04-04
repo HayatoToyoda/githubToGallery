@@ -126,9 +126,11 @@ function createSphereGroundMaterial() {
       "#include <common>",
       "#include <common>\nvarying vec3 vWorldPosition;\n"
     );
+    // worldpos_vertex は USE_SHADOWMAP 等が無いと空になり worldPosition が未定義になるため、
+    // 常にローカル座標から世界座標を計算する（Three.js r160+）
     shader.vertexShader = shader.vertexShader.replace(
       "#include <worldpos_vertex>",
-      "#include <worldpos_vertex>\nvWorldPosition = worldPosition.xyz;\n"
+      "#include <worldpos_vertex>\nvWorldPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n"
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <common>",
