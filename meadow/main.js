@@ -44,17 +44,62 @@ function easeOutCubic(t) {
   return 1 - (1 - t) ** 3;
 }
 
+/** GitHub プロフィールの Contribution 草に近い緑の段階（概算） */
+const GH_GRASS_STOPS = [0x9be9a8, 0x40c463, 0x30a14e, 0x216e39];
+
+/**
+ * 強度 t（0〜1）から草の色と高さ係数。Contribution の濃い日ほど高く濃い緑。
+ * @param {number} t
+ * @returns {{ color: THREE.Color, heightScale: number }}
+ */
+function grassStyleFromIntensity(t) {
+  const u = Math.max(0, Math.min(1, t));
+  const heightScale = 0.38 + 0.62 * u;
+  const span = GH_GRASS_STOPS.length - 1;
+  const x = u * span;
+  const i = Math.min(span - 1, Math.floor(x));
+  const f = x - i;
+  const color = new THREE.Color(GH_GRASS_STOPS[i]).lerp(
+    new THREE.Color(GH_GRASS_STOPS[i + 1]),
+    f
+  );
+  return { color, heightScale };
+}
+
+/**
+ * @param {{ commitCount: number, contributionDays?: number[], maxDayContributions?: number }} activity
+ * @param {number} bladeIndex
+ */
+function grassStyleForBlade(activity, bladeIndex) {
+  const days = activity.contributionDays;
+  const maxDay = activity.maxDayContributions;
+
+  if (days?.length && typeof maxDay === "number" && maxDay > 0) {
+    const di = Math.floor(rng(bladeIndex + 42) * days.length);
+    const c = days[di] ?? 0;
+    const t = Math.min(1, c / maxDay);
+    return grassStyleFromIntensity(t);
+  }
+
+  const ref = 85000;
+  const base = Math.log1p(Math.max(0, activity.commitCount)) / Math.log1p(ref);
+  const jitter = 0.28 * (rng(bladeIndex + 1.17) - 0.5);
+  const t = Math.max(0, Math.min(1, base + jitter));
+  return grassStyleFromIntensity(t);
+}
+
 /**
  * 球面上に一様分布した草。極からの角 θ でソートし、inst.count で成長を表現。
+ * OAuth 時は日別 contribution に応じて色・高さを変える。
  */
-function buildGrassSphereInstancedMesh(bladeCount, R) {
+function buildGrassSphereInstancedMesh(bladeCount, R, activity) {
   const baseGeom = new THREE.PlaneGeometry(0.042, 0.52, 1, 4);
   baseGeom.translate(0, 0.26, 0);
 
   const inst = new THREE.InstancedMesh(
     baseGeom,
     new THREE.MeshStandardMaterial({
-      color: 0x4ec96f,
+      color: 0xffffff,
       side: THREE.DoubleSide,
       roughness: 0.55,
       metalness: 0.02,
@@ -96,13 +141,12 @@ function buildGrassSphereInstancedMesh(bladeCount, R) {
     );
     dummy.quaternion.copy(qBase).multiply(qRand);
     const s = 0.7 + rng(i + 0.2) * 0.85;
-    dummy.scale.set(s, s * (0.92 + rng(i + 0.6) * 0.35), s);
+    const { color, heightScale } = grassStyleForBlade(activity, i);
+    const yVar = 0.88 + rng(i + 0.6) * 0.24;
+    dummy.scale.set(s, s * yVar * heightScale, s);
     dummy.updateMatrix();
     inst.setMatrixAt(i, dummy.matrix);
-    const g = 0.78 + rng(i + 0.7) * 0.22;
-    const c = new THREE.Color(0x3ecf62).multiplyScalar(g);
-    c.lerp(new THREE.Color(0xb8f070), 0.12 + rng(i + 0.8) * 0.15);
-    inst.setColorAt(i, c);
+    inst.setColorAt(i, color);
   }
   inst.instanceMatrix.needsUpdate = true;
   if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
@@ -279,7 +323,7 @@ async function main() {
   scene.add(sphereMesh);
 
   const grassGroup = new THREE.Group();
-  const inst = buildGrassSphereInstancedMesh(bladeCount, SPHERE_RADIUS);
+  const inst = buildGrassSphereInstancedMesh(bladeCount, SPHERE_RADIUS, activity);
   grassGroup.add(inst);
   scene.add(grassGroup);
 

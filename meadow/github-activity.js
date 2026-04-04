@@ -4,7 +4,13 @@
  */
 
 /**
- * @typedef {{ commitCount: number, label: string, source: string }} GithubActivity
+ * @typedef {{
+ *   commitCount: number,
+ *   label: string,
+ *   source: string,
+ *   contributionDays?: number[],
+ *   maxDayContributions?: number,
+ * }} GithubActivity
  */
 
 const API = "https://api.github.com";

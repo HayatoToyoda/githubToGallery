@@ -4,8 +4,30 @@
  */
 
 /**
- * @typedef {{ commitCount: number, label: string, source: string }} GithubActivity
+ * @typedef {{
+ *   commitCount: number,
+ *   label: string,
+ *   source: string,
+ *   contributionDays?: number[],
+ *   maxDayContributions?: number,
+ * }} GithubActivity
  */
+
+/**
+ * @param {object} cal - GraphQL contributionCalendar
+ */
+function flattenContributionDays(cal) {
+  const days = [];
+  let max = 0;
+  for (const week of cal.weeks || []) {
+    for (const day of week.contributionDays || []) {
+      const c = typeof day.contributionCount === "number" ? day.contributionCount : 0;
+      days.push(c);
+      if (c > max) max = c;
+    }
+  }
+  return { days, max };
+}
 
 /**
  * @param {string} apiBase Worker のオリジン（末尾スラッシュなし）
@@ -29,9 +51,12 @@ export async function fetchOAuthContributionActivity(apiBase) {
   if (!cal) return null;
   const total = cal.totalContributions;
   if (typeof total !== "number") return null;
+  const { days, max } = flattenContributionDays(cal);
   return {
     commitCount: Math.max(0, total),
     label: `Contribution Calendar（過去約1年）· ${total.toLocaleString()} contributions`,
     source: "oauth_calendar",
+    contributionDays: days.length ? days : undefined,
+    maxDayContributions: max > 0 ? max : undefined,
   };
 }
