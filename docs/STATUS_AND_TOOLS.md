@@ -20,7 +20,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| **ルート `package.json`** | なし（`meadow/` はビルド不要の静的ファイル）。 |
+| **ルート `package.json`** | なし（`meadow/` はビルド不要の静的ファイル）。**`tools/meadow-capture/package.json`** のみ、README 素材の自動キャプチャ用。 |
 | **`assets/`** | README 用 `hero.gif` / `3d-showcase.png` を配置。[`tools/meadow-capture`](../tools/meadow-capture) で再生成可能。 |
 | **README の Live demo URL** | `YOUR_USERNAME` 等の **プレースホルダ**（実際の GitHub ユーザー名・リポ名に置き換えが必要）。 |
 | **`meadow/index.html` の `MEADOW_API_BASE`** | 既定は空文字。Worker を使う場合のみデプロイ後のオリジンを設定。 |
@@ -54,7 +54,7 @@
 | **three**（CDN） | 0.160.0（`meadow/index.html` の importmap） | 3D シーン。 |
 | **Google Fonts** | （HTML で指定） | タイポグラフィ。 |
 
-ルートに npm ロックファイルはなく、**`meadow/` 単体に `npm install` は不要**。
+**`meadow/` 単体に `npm install` は不要**。README 用 GIF・PNG を自動生成するときだけ [`tools/meadow-capture`](../tools/meadow-capture) で `npm install` する。
 
 ### 4.3 Worker（Node / npm）
 
@@ -75,9 +75,13 @@
 
 | ツール | 用途 |
 |--------|------|
-| **ffmpeg** | 画面録画から `assets/hero.gif` への変換例（[CAPTURE.md](../meadow/CAPTURE.md)）。 |
+| **[tools/meadow-capture](../tools/meadow-capture)** | `assets/hero.gif` / `assets/3d-showcase.png` を一括生成。`cd tools/meadow-capture && npm install && npx playwright install chromium && npm run capture`。Node 内蔵の静的サーバで `meadow/` を配信し、ヘッドレス Chromium で撮影、`gifenc` で GIF を書き出す。 |
+| **Playwright**（上記の依存） | ヘッドレス **Chromium** でページを開き PNG を取得。 |
+| **gifenc**（上記の依存） | フレームをパレット化して `hero.gif` をエンコード。 |
+| **pngjs**（上記の依存） | スクリーンショット PNG を RGBA にデコード。 |
+| **ffmpeg** | 手動で録画したクリップから `assets/hero.gif` へ変換する例（[CAPTURE.md](../meadow/CAPTURE.md)）。自動スクリプトでは不要。 |
 | **gifsicle** | GIF の最適化（[README.md](../README.md) で言及）。 |
-| **スクリーンショット** | `assets/3d-showcase.png`（`?noRotate=1` で撮影しやすい）。 |
+| **スクリーンショット（手動）** | `assets/3d-showcase.png` をブラウザだけで撮る場合（`?noRotate=1` で撮影しやすい）。 |
 
 ### 4.6 バージョン管理・CLI（任意）
 
