@@ -21,7 +21,7 @@
 | 項目 | 状態 |
 |------|------|
 | **ルート `package.json`** | なし（`meadow/` はビルド不要の静的ファイル）。 |
-| **`assets/`** | 配置用ディレクトリあり（`.gitkeep`）。**`hero.gif` / `3d-showcase.png` はリポジトリに未コミットの想定**（README 参照時、未配置だと画像が欠ける）。 |
+| **`assets/`** | README 用 `hero.gif` / `3d-showcase.png` を配置。[`tools/meadow-capture`](../tools/meadow-capture) で再生成可能。 |
 | **README の Live demo URL** | `YOUR_USERNAME` 等の **プレースホルダ**（実際の GitHub ユーザー名・リポ名に置き換えが必要）。 |
 | **`meadow/index.html` の `MEADOW_API_BASE`** | 既定は空文字。Worker を使う場合のみデプロイ後のオリジンを設定。 |
 | **旧パス** | `night-field/` → `meadow/` に移行済み。旧 URL のブックマークは無効。 |

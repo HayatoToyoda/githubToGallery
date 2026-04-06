@@ -121,7 +121,7 @@ cd workers/meadow-auth && npx wrangler deploy
 </p>
 
 <p align="center">
-  <sub>上記は <code>assets/hero.gif</code> を配置すると表示されます（未配置のときはリンク切れに見えます）。</sub>
+  <sub>ヒーローは <code>meadow/</code> を録画・書き出した <code>assets/hero.gif</code>。再生成は <a href="meadow/CAPTURE.md">meadow/CAPTURE.md</a> または <code>tools/meadow-capture</code>（<code>npm install</code> → <code>npx playwright install chromium</code> → <code>npm run capture</code>）。</sub>
 </p>
 
 ---
@@ -137,7 +137,7 @@ cd workers/meadow-auth && npx wrangler deploy
 </p>
 
 <p align="center">
-  <sub><code>assets/3d-showcase.png</code>。静止画の撮り方は <a href="meadow/CAPTURE.md">meadow/CAPTURE.md</a>（<code>?noRotate=1</code> で自動回転オフ）。</sub>
+  <sub>静止画 <code>assets/3d-showcase.png</code>。撮り方は <a href="meadow/CAPTURE.md">meadow/CAPTURE.md</a>（<code>?noRotate=1</code> で自動回転オフ）。上記スクリプトでも同じ解像度で書き出せます。</sub>
 </p>
 
 ---

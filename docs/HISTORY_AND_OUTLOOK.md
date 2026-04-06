@@ -45,7 +45,7 @@
 | **3D** | 球体＋球冠シェーダ＋球面草＋導入アニメ（[`meadow/main.js`](../meadow/main.js)）。 |
 | **Worker** | OAuth、GraphQL プロキシ、**README 用 SVG カード**（[`workers/meadow-auth`](../workers/meadow-auth/)）。 |
 | **ドキュメント** | PROJECT / STATUS_AND_TOOLS / 本書。README に PROJECT・STATUS への案内。 |
-| **運用上のプレースホルダ** | `assets/` の GIF・PNG 未配置の可能性、README の Live demo の `YOUR_USERNAME`、`MEADOW_API_BASE` 未設定時は OAuth 非表示。 |
+| **運用上のプレースホルダ** | README の Live demo の `YOUR_USERNAME`、`MEADOW_API_BASE` 未設定時は OAuth 非表示。 |
 
 ---
 
