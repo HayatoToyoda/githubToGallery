@@ -7,8 +7,7 @@
 **草の量と大地の半径**は **contributors のコミット数**だけを使います。
 
 - **フォームでユーザー名のみ**: 公開リポジトリを走査し、あなたのコミットが最も多いリポを自動選択。
-- **明示指定**: `?repo=owner/name&user=login` または `?repo=owner/name`（合計コミット）。
-- 例: `http://127.0.0.1:8080/?user=octocat` または `?repo=torvalds/linux&user=torvalds`
+- 例: `http://127.0.0.1:8080/?user=octocat`
 - クエリなし: デモ用の固定コミット数相当。
 
 ## ローカルで確認

@@ -28,13 +28,11 @@
 **優先順位（`meadow/main.js`）**
 
 1. **OAuth + GraphQL（Contribution Calendar）** — [`workers/meadow-auth`](workers/meadow-auth) をデプロイし、[`meadow/index.html`](meadow/index.html) の `window.MEADOW_API_BASE` に Worker のオリジンを書いたとき。ログイン済みなら **過去約1年の `totalContributions`** を使用。  
-2. **公開 REST API** — URL またはフォームで **`?user=` / `?repo=`** を指定したとき（[meadow/github-activity.js](meadow/github-activity.js)）。
+2. **公開 REST API** — URL またはフォームで **`?user=`** を指定したとき（[meadow/github-activity.js](meadow/github-activity.js)）。
 
 **公開 API の挙動**
 
 - **ユーザー名のみ**: 同名リポジトリ（`user/user`）と、公開リポジトリ一覧から最大 **12 件**を試し、**あなたのコミット数が最も多いリポ**を自動選択（[contributors](https://docs.github.com/en/rest/metrics/statistics) の `total`）。  
-- **リポジトリも指定**（`owner/name`）: そのリポだけを使い、任意で **`&user=`** により **特定ユーザーのコミット**に限定。  
-- **リポジトリだけ**（`?repo=` のみ）: そのリポの **全 contributors 合計コミット**。  
 - クエリなし: **デモ用の固定コミット数相当**。  
 - 認証なし API には **レート制限**があります。統計が未生成のときは **HTTP 202** でリトライします。
 

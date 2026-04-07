@@ -1,6 +1,6 @@
 /**
  * GitHub 公開 API の contributors 統計からコミット数を取り、大地と草のスケールに使う。
- * ユーザー名のみのときは公開リポジトリを数件試し、あなたのコミット数が最大のリポを自動選択。
+ * ユーザー名から公開リポジトリを数件試し、あなたのコミット数が最大のリポを自動選択する。
  */
 
 /**
@@ -125,7 +125,7 @@ async function resolveActivityFromUsernameOnly(username) {
 
   if (best.commits <= 0) {
     throw new Error(
-      "公開リポジトリでコミットを集計できませんでした。プロフィール用リポジトリ（同名）がない、または contributors 統計が未生成の可能性があります。下のフォームで owner/repo を直接指定してみてください。"
+      "公開リポジトリでコミットを集計できませんでした。プロフィール用リポジトリ（同名）がない、または contributors 統計が未生成の可能性があります。"
     );
   }
 
@@ -142,66 +142,14 @@ async function resolveActivityFromUsernameOnly(username) {
  */
 export async function resolveGithubActivity(searchParams) {
   const user = (searchParams.get("user") || searchParams.get("u") || "").trim();
-  const repoParam = (searchParams.get("repo") || searchParams.get("r") || "").trim();
 
-  if (user && !repoParam) {
+  if (user) {
     return resolveActivityFromUsernameOnly(user);
-  }
-
-  if (repoParam) {
-    const parts = repoParam.split("/").filter(Boolean);
-    if (parts.length !== 2) {
-      throw new Error("repo は owner/name 形式で指定してください（例: torvalds/linux）");
-    }
-    const [owner, repo] = parts;
-    const rows = await fetchContributorStats(owner, repo);
-
-    if (!rows.length) {
-      throw new Error(
-        "contributors がまだ空です。リポジトリが新しいか、GitHub 側の集計待ちです（数分後に再試行）"
-      );
-    }
-
-    let totalCommits = 0;
-    let picked = null;
-
-    if (user) {
-      const login = user.toLowerCase();
-      for (const row of rows) {
-        const name = row.author?.login?.toLowerCase();
-        if (!name) continue;
-        if (name === login) {
-          picked = row;
-          break;
-        }
-      }
-      if (!picked) {
-        throw new Error(
-          `このリポジトリの contributors に「${user}」が見つかりません（公開データのみ参照）`
-        );
-      }
-      totalCommits = picked.total ?? 0;
-      return {
-        commitCount: Math.max(0, totalCommits),
-        label: `${user} @ ${owner}/${repo} · コミット約 ${totalCommits.toLocaleString()} 件`,
-        source: "repo_contributor",
-      };
-    }
-
-    for (const row of rows) {
-      if (!row.author) continue;
-      totalCommits += row.total ?? 0;
-    }
-    return {
-      commitCount: Math.max(0, totalCommits),
-      label: `${owner}/${repo} · 全 contributors 合計コミット約 ${totalCommits.toLocaleString()} 件`,
-      source: "repo_total",
-    };
   }
 
   return {
     commitCount: 320,
-    label: "デモ（コミット数 320 相当）· ユーザー名または repo で実データ",
+    label: "デモ（コミット数 320 相当）· ユーザー名で実データ",
     source: "demo",
   };
 }

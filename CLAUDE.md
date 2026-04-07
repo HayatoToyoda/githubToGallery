@@ -33,7 +33,7 @@ githubToGallery/
 
 データフロー（`main.js`）:
 1. `window.MEADOW_API_BASE` が設定されていれば `fetchOAuthContributionActivity` を試行
-2. OAuth 未使用 かつ URL パラメータあり（`?user=` / `?repo=`）なら `resolveGithubActivity` を呼ぶ
+2. OAuth 未使用 かつ URL パラメータあり（`?user=`）なら `resolveGithubActivity` を呼ぶ
 3. どちらもなければデモ値（十分大きい活動量で「育った畑」）
 4. `growthAngleFromActivity` → `bladeCountFromCommits` でスケール計算し **球体**シーンを構築（土壌はシェーダで茶／緑混合）
 

@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resolveGithubActivity } from "./github-activity.js";
 import { fetchOAuthContributionActivity } from "./oauth-contributions.js";
+import { normalizeMeadowUrlSearch } from "./url-state.js";
 
-const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(normalizeMeadowUrlSearch(window.location.search));
 const noRotate = params.has("noRotate");
 
 function getMeadowApiBase() {
@@ -195,11 +196,7 @@ function createSphereGroundMaterial() {
 
 async function main() {
   const statusEl = document.getElementById("activity-status");
-  const hasQuery =
-    params.has("user") ||
-    params.has("u") ||
-    params.has("repo") ||
-    params.has("r");
+  const hasQuery = params.has("user") || params.has("u");
 
   const apiBase = getMeadowApiBase();
 
@@ -229,14 +226,9 @@ async function main() {
   }
 
   if (!oauthUsed && hasQuery) {
-    const userOnly =
-      (params.has("user") || params.has("u")) &&
-      !params.has("repo") &&
-      !params.has("r");
     if (statusEl) {
-      statusEl.textContent = userOnly
-        ? "あなたの公開リポジトリを検索してコミット数を集計しています…"
-        : "GitHub の公開データを読み込み中…";
+      statusEl.textContent =
+        "あなたの公開リポジトリを検索してコミット数を集計しています…";
     }
     try {
       activity = await resolveGithubActivity(params);
