@@ -16,6 +16,7 @@
     </script>
   </head>
   <body>
+    <canvas id="meadow-canvas" aria-hidden="true"></canvas>
     <div id="canvas-wrap" aria-hidden="true"></div>
 
     <main class="overlay">
@@ -42,16 +43,6 @@
           placeholder="あなたの ID（例: octocat）"
           required
         />
-        <label class="gh-form__label" for="gh-repo">リポジトリ（任意・owner/name）</label>
-        <input
-          class="gh-form__input"
-          id="gh-repo"
-          name="repo"
-          type="text"
-          placeholder="省略時は公開リポから自動で選択"
-          autocapitalize="off"
-          spellcheck="false"
-        />
         <button class="gh-form__submit" type="submit">自分の畑を見る</button>
       </form>
       <p id="activity-status" class="activity-status" aria-live="polite"></p>
@@ -62,14 +53,22 @@
       </nav>
     </main>
 
-    <script>
+    <script type="module">
+      import { normalizeMeadowUrlSearch } from "./url-state.js";
+
       (function () {
         var form = document.getElementById("gh-form");
         var userIn = document.getElementById("gh-user");
-        var repoIn = document.getElementById("gh-repo");
-        var p = new URLSearchParams(window.location.search);
+        var normalizedSearch = normalizeMeadowUrlSearch(window.location.search);
+        var p = new URLSearchParams(normalizedSearch);
+        if (normalizedSearch !== window.location.search) {
+          history.replaceState(
+            null,
+            "",
+            window.location.pathname + normalizedSearch + window.location.hash
+          );
+        }
         if (userIn && p.get("user")) userIn.value = p.get("user");
-        if (repoIn && p.get("repo")) repoIn.value = p.get("repo");
         try {
           var last = localStorage.getItem("meadow_last_user");
           if (userIn && last && !p.get("user")) userIn.value = last;
@@ -78,14 +77,13 @@
           form.addEventListener("submit", function (e) {
             e.preventDefault();
             var u = (userIn && userIn.value.trim()) || "";
-            var r = (repoIn && repoIn.value.trim()) || "";
-            var q = new URLSearchParams();
-            if (u) q.set("user", u);
-            if (r) q.set("repo", r);
+            var nextSearch = normalizeMeadowUrlSearch(
+              u ? "?user=" + encodeURIComponent(u) : ""
+            );
             try {
               if (u) localStorage.setItem("meadow_last_user", u);
             } catch (err) {}
-            window.location.search = q.toString();
+            window.location.search = nextSearch;
           });
         }
         var raw = window.MEADOW_API_BASE;
@@ -94,7 +92,7 @@
             ? raw.replace(/\/$/, "")
             : "";
         if (api) {
-          var here = location.href.split("#")[0];
+          var here = location.origin + location.pathname + normalizedSearch;
           var login = document.getElementById("meadow-login");
           var logout = document.getElementById("meadow-logout");
           if (login) {

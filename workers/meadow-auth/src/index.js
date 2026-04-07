@@ -10,6 +10,7 @@ import {
   buildErrorCardSvg,
   isValidGitHubUsername,
 } from "./readme-card.js";
+import { sanitizeReturnToForMeadow } from "./meadow-return-to.mjs";
 
 const COOKIE = "meadow_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -212,6 +213,7 @@ export default {
 };
 
 const README_CARD_UA = "githubToGallery/meadow-auth-readme-card";
+const GITHUB_API_UA = "githubToGallery/meadow-auth";
 
 async function handleReadmeCard(request, env, url) {
   const userParam = url.searchParams.get("user") || url.searchParams.get("username");
@@ -331,7 +333,7 @@ async function handleAuthStart(request, env, url) {
       status: 500,
     });
   }
-  let returnTo = url.searchParams.get("return_to") || "";
+  let returnTo = sanitizeReturnToForMeadow(url.searchParams.get("return_to") || "");
   if (!isAllowedReturnTo(returnTo, env)) {
     returnTo = `${allowed[0].replace(/\/$/, "")}/`;
   }
@@ -427,6 +429,7 @@ async function handleContributions(request, env) {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "User-Agent": GITHUB_API_UA,
     },
     body: JSON.stringify({
       query,
@@ -470,7 +473,7 @@ async function handleContributions(request, env) {
 
 async function handleLogout(request, env, url) {
   const allowed = getAllowedOrigins(env);
-  let returnTo = url.searchParams.get("return_to") || "";
+  let returnTo = sanitizeReturnToForMeadow(url.searchParams.get("return_to") || "");
   if (!isAllowedReturnTo(returnTo, env)) {
     returnTo = allowed[0] ? `${allowed[0].replace(/\/$/, "")}/` : "/";
   }

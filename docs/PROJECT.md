@@ -42,7 +42,7 @@
 |------|------|
 | [README.md](../README.md) | ユーザー向けの概要・デプロイ・OAuth 手順・Live demo URL |
 | [assets/](../assets/) | README 用 `hero.gif` / `3d-showcase.png` など |
-| [meadow/](../meadow/) | **Meadow** デモ: `index.html`、`main.js`（シーン）、`github-activity.js`（公開 API）、`oauth-contributions.js`（Worker 経由の Contribution）、`styles.css`、`CAPTURE.md`（録画手順） |
+| [meadow/](../meadow/) | **Meadow** デモ: `index.html`、`main.js`（シーン）、`github-activity.js`（公開 API）、`url-state.js`（`user` クエリ正規化）、`oauth-contributions.js`（Worker 経由の Contribution）、`styles.css`、`CAPTURE.md`（録画手順） |
 | [workers/meadow-auth/](../workers/meadow-auth/) | Cloudflare Worker ソース、`wrangler.toml`、Worker 専用 README、`.dev.vars.example` |
 | [GITHUB_PROFILE_README.md](../GITHUB_PROFILE_README.md) | プロフィール README 用のテンプレート（任意） |
 | [docs/PROJECT.md](PROJECT.md) | 本書（プロジェクト全体の説明） |

@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resolveGithubActivity } from "./github-activity.js";
 import { fetchOAuthContributionActivity } from "./oauth-contributions.js";
+import { normalizeMeadowUrlSearch } from "./url-state.js";
 
-const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(normalizeMeadowUrlSearch(window.location.search));
 const noRotate = params.has("noRotate");
 
 function getMeadowApiBase() {
@@ -195,11 +196,7 @@ function createSphereGroundMaterial() {
 
 async function main() {
   const statusEl = document.getElementById("activity-status");
-  const hasQuery =
-    params.has("user") ||
-    params.has("u") ||
-    params.has("repo") ||
-    params.has("r");
+  const hasQuery = params.has("user") || params.has("u");
 
   const apiBase = getMeadowApiBase();
 
@@ -229,14 +226,9 @@ async function main() {
   }
 
   if (!oauthUsed && hasQuery) {
-    const userOnly =
-      (params.has("user") || params.has("u")) &&
-      !params.has("repo") &&
-      !params.has("r");
     if (statusEl) {
-      statusEl.textContent = userOnly
-        ? "あなたの公開リポジトリを検索してコミット数を集計しています…"
-        : "GitHub の公開データを読み込み中…";
+      statusEl.textContent =
+        "あなたの公開リポジトリを検索してコミット数を集計しています…";
     }
     try {
       activity = await resolveGithubActivity(params);
@@ -271,8 +263,23 @@ async function main() {
     }
   }
 
-  const container = document.getElementById("canvas-wrap");
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const canvasAnchor = document.getElementById("canvas-wrap");
+  let canvasEl = document.getElementById("meadow-canvas");
+  if (!canvasEl) {
+    canvasEl = document.createElement("canvas");
+    canvasEl.id = "meadow-canvas";
+    canvasEl.setAttribute("aria-hidden", "true");
+    if (canvasAnchor?.parentNode) {
+      canvasAnchor.parentNode.insertBefore(canvasEl, canvasAnchor);
+    } else {
+      document.body.prepend(canvasEl);
+    }
+  }
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvasEl,
+    antialias: true,
+    alpha: true,
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -280,7 +287,6 @@ async function main() {
 
   const sky = 0x7ec8ff;
   renderer.setClearColor(sky, 1);
-  container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x8fd4ff);
