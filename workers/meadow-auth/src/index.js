@@ -213,6 +213,7 @@ export default {
 };
 
 const README_CARD_UA = "githubToGallery/meadow-auth-readme-card";
+const GITHUB_API_UA = "githubToGallery/meadow-auth";
 
 async function handleReadmeCard(request, env, url) {
   const userParam = url.searchParams.get("user") || url.searchParams.get("username");
@@ -428,6 +429,7 @@ async function handleContributions(request, env) {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "User-Agent": GITHUB_API_UA,
     },
     body: JSON.stringify({
       query,

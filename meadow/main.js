@@ -263,8 +263,23 @@ async function main() {
     }
   }
 
-  const container = document.getElementById("canvas-wrap");
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const canvasAnchor = document.getElementById("canvas-wrap");
+  let canvasEl = document.getElementById("meadow-canvas");
+  if (!canvasEl) {
+    canvasEl = document.createElement("canvas");
+    canvasEl.id = "meadow-canvas";
+    canvasEl.setAttribute("aria-hidden", "true");
+    if (canvasAnchor?.parentNode) {
+      canvasAnchor.parentNode.insertBefore(canvasEl, canvasAnchor);
+    } else {
+      document.body.prepend(canvasEl);
+    }
+  }
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvasEl,
+    antialias: true,
+    alpha: true,
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -272,7 +287,6 @@ async function main() {
 
   const sky = 0x7ec8ff;
   renderer.setClearColor(sky, 1);
-  container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x8fd4ff);
