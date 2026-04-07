@@ -18,14 +18,6 @@
   <body>
     <div id="canvas-wrap" aria-hidden="true"></div>
 
-    <header class="chrome">
-      <div class="chrome__dots" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-      <p class="chrome__title">viewer — meadow@local</p>
-      <p class="chrome__badge">daytime</p>
-    </header>
-
     <main class="overlay">
       <p class="eyebrow">pop 3d · github</p>
       <h1 class="headline">
@@ -67,28 +59,8 @@
         <a class="btn" href="https://github.com/" rel="noreferrer">GitHub</a>
         <a id="meadow-login" class="btn" href="#" style="display: none">GitHub でログイン（Contribution）</a>
         <a id="meadow-logout" class="btn btn--ghost" href="#" style="display: none">ログアウト</a>
-        <a class="btn btn--ghost" href="#terminal">ヒントへ</a>
       </nav>
     </main>
-
-    <section id="terminal" class="terminal" aria-label="クエリの例">
-      <div class="terminal__bar">
-        <span class="terminal__prompt">~</span>
-        <span class="terminal__label">zsh — meadow</span>
-      </div>
-      <div class="terminal__body">
-        <p><span class="cmd">$</span> <span class="kw">cat</span> ./query-hint.txt</p>
-        <p class="out muted"># ユーザー名のみ: 公開リポを走査しコミットが最大のリポを自動選択</p>
-        <p class="out muted"># リポ指定: <code>?repo=owner/name&amp;user=あなた</code></p>
-        <p class="out muted"># OAuth: Cloudflare Worker の URL を <code>MEADOW_API_BASE</code> に設定</p>
-        <p class="out">例: <code>?user=octocat</code> または <code>?repo=torvalds/linux&amp;user=torvalds</code></p>
-        <p>
-          <span class="cmd">$</span> <span class="kw">open</span>
-          <a class="link" href="https://pages.github.com/">pages.github.com</a>
-        </p>
-        <p class="cursor-line"><span class="cursor" aria-hidden="true"></span></p>
-      </div>
-    </section>
 
     <script>
       (function () {

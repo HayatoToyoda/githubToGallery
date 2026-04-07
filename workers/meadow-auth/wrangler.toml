@@ -12,4 +12,4 @@ compatibility_date = "2024-10-01"
 # 任意: wrangler secret put GITHUB_TOKEN  （README カード /api/readme-card.svg の API レート緩和）
 # ALLOWED_ORIGINS はカンマ区切り（CORS）。例: https://hayatotoyoda.github.io,http://localhost:8080
 [vars]
-# ALLOWED_ORIGINS = "https://YOUR_USER.github.io,http://127.0.0.1:8080"
+ALLOWED_ORIGINS = "https://hayatotoyoda.github.io,http://127.0.0.1:8080"

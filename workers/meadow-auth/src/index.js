@@ -21,16 +21,46 @@ function getAllowedOrigins(env) {
     .filter(Boolean);
 }
 
+/**
+ * ブラウザの Origin ヘッダ（例: https://hayatotoyoda.github.io）と
+ * ALLOWED_ORIGINS の各要素を origin 単位で比較する。
+ * GitHub Pages はホスト名を小文字に正規化するが、設定側に HayatoToyoda のように
+ * 大文字が混ざると旧実装の includes だけでは一致しない → CORS 失敗（net::ERR_FAILED）。
+ * @returns {string} 一致したときはリクエストの Origin をそのまま返す（ACAO は完全一致必須）
+ */
+function resolveCorsOrigin(requestOrigin, allowedList) {
+  if (!requestOrigin) return "";
+  try {
+    const req = new URL(requestOrigin);
+    for (const entry of allowedList) {
+      try {
+        const allowed = new URL(entry);
+        if (req.origin.toLowerCase() === allowed.origin.toLowerCase()) {
+          return requestOrigin;
+        }
+      } catch {
+        /* ignore invalid entry */
+      }
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
 function corsForRequest(request, env) {
   const origin = request.headers.get("Origin");
   const allowed = getAllowedOrigins(env);
-  const match = origin && allowed.includes(origin) ? origin : allowed[0] || "";
-  return {
-    "Access-Control-Allow-Origin": match,
+  const match = resolveCorsOrigin(origin, allowed);
+  const h = {
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
+  if (match) {
+    h["Access-Control-Allow-Origin"] = match;
+  }
+  return h;
 }
 
 function isAllowedReturnTo(url, env) {
@@ -39,7 +69,19 @@ function isAllowedReturnTo(url, env) {
     const u = new URL(url);
     if (u.protocol !== "https:" && u.protocol !== "http:") return false;
     const allowed = getAllowedOrigins(env);
-    return allowed.some((prefix) => url.startsWith(prefix));
+    return allowed.some((prefix) => {
+      const p = prefix.trim();
+      if (!p) return false;
+      try {
+        const pu = new URL(p);
+        if (u.origin.toLowerCase() !== pu.origin.toLowerCase()) return false;
+        const pathPrefix = pu.pathname || "/";
+        if (pathPrefix === "/" || pathPrefix === "") return true;
+        return u.pathname === pathPrefix || u.pathname.startsWith(`${pathPrefix}/`);
+      } catch {
+        return url.startsWith(p);
+      }
+    });
   } catch {
     return false;
   }
@@ -259,6 +301,21 @@ function jsonResponse(obj, status, extra = {}) {
   });
 }
 
+/** ブラウザが読めるデバッグ（トークンは含めない）。ingest と Network の X-Meadow-Debug 用 */
+function meadowDebugHeaders(request, cors, extras = {}) {
+  const hasCookie = /(?:^|;\s*)meadow_session=/.test(request.headers.get("Cookie") || "");
+  const payload = {
+    hypothesisId: "H1-H4",
+    corsAcao: !!cors["Access-Control-Allow-Origin"],
+    hasCookie,
+    ...extras,
+  };
+  return {
+    "Access-Control-Expose-Headers": "X-Meadow-Debug",
+    "X-Meadow-Debug": JSON.stringify(payload),
+  };
+}
+
 function getRedirectUri(request) {
   const u = new URL(request.url);
   return `${u.origin}/auth/github/callback`;
@@ -330,11 +387,19 @@ async function handleAuthCallback(request, env, url) {
 async function handleContributions(request, env) {
   const cors = corsForRequest(request, env);
   if (!cors["Access-Control-Allow-Origin"]) {
-    return jsonResponse({ error: "cors_origin_not_allowed" }, 403, cors);
+    return jsonResponse(
+      { error: "cors_origin_not_allowed" },
+      403,
+      { ...cors, ...meadowDebugHeaders(request, cors, { stage: "cors_blocked" }) }
+    );
   }
   const token = await readSessionFromCookie(request, env.SESSION_SECRET);
   if (!token) {
-    return jsonResponse({ error: "unauthorized" }, 401, cors);
+    return jsonResponse(
+      { error: "unauthorized" },
+      401,
+      { ...cors, ...meadowDebugHeaders(request, cors, { stage: "no_session_token" }) }
+    );
   }
 
   const to = new Date();
@@ -372,11 +437,34 @@ async function handleContributions(request, env) {
     }),
   });
 
-  const body = await gqlRes.json();
-  const headers = { ...cors };
+  const gqlText = await gqlRes.text();
+  let body;
+  try {
+    body = JSON.parse(gqlText);
+  } catch {
+    return jsonResponse(
+      { error: "graphql_response_not_json", gqlStatus: gqlRes.status },
+      502,
+      {
+        ...cors,
+        ...meadowDebugHeaders(request, cors, { stage: "gql_body_parse_failed", gqlHttp: gqlRes.status }),
+      }
+    );
+  }
+
+  const headers = {
+    ...cors,
+    ...meadowDebugHeaders(request, cors, {
+      stage: "gql_done",
+      gqlHttp: gqlRes.status,
+      gqlOk: gqlRes.ok,
+      hasGraphqlErrors: Array.isArray(body.errors) && body.errors.length > 0,
+    }),
+    "Content-Type": "application/json",
+  };
   return new Response(JSON.stringify(body), {
     status: gqlRes.ok ? 200 : gqlRes.status,
-    headers: { ...headers, "Content-Type": "application/json" },
+    headers,
   });
 }
 

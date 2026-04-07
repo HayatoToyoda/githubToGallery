@@ -97,7 +97,8 @@
 - [PROJECT.md](PROJECT.md) — 目的・境界・データの流れ・エージェント向けファイル対応表  
 - [README.md](../README.md) — デプロイ手順、OAuth、CORS、Live demo  
 - [meadow/CAPTURE.md](../meadow/CAPTURE.md) — 録画・GIF・静止画  
-- [workers/meadow-auth/README.md](../workers/meadow-auth/README.md) — Worker 専用
+- [workers/meadow-auth/README.md](../workers/meadow-auth/README.md) — Worker 専用  
+- [OAUTH_RETURN_TO_CASE_SENSITIVITY.md](OAUTH_RETURN_TO_CASE_SENSITIVITY.md) — OAuth 後にトップだけ開く問題（オリジン大文字小文字）の整理・記事用メモ
 
 ---
 

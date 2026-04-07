@@ -266,6 +266,9 @@ async function main() {
     } else {
       statusEl.textContent = `${activity.label} · ${stats}`;
     }
+    if (params.has("meadowDebug") && globalThis.__MEADOW_OAUTH_DEBUG != null) {
+      statusEl.textContent = `[debug] ${JSON.stringify(globalThis.__MEADOW_OAUTH_DEBUG)}\n${statusEl.textContent}`;
+    }
   }
 
   const container = document.getElementById("canvas-wrap");

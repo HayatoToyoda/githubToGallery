@@ -36,6 +36,18 @@ npx wrangler dev
 
 `GET /api/readme-card.svg` は認証なしでも動作しますが、**未認証の GitHub API は時間あたりの呼び出し上限が厳しい**です。負荷が高い場合は `wrangler secret put GITHUB_TOKEN` で **read 権限の PAT** を登録してください（公開ユーザー情報の取得のみに使います）。
 
+## トラブルシュート（OAuth 後にユーザーサイトのトップだけ開く）
+
+ログイン後に `https://<user>.github.io/` だけに飛び、**meadow に戻らない**ときは、多くの場合 **`return_to` が `ALLOWED_ORIGINS` と一致しない**ため、Worker が先頭のオリジンへフォールバックしている状態です。
+
+- **Cloudflare の `ALLOWED_ORIGINS`** に、meadow を開いている **オリジン**（`https://<user>.github.io` のみ。パスは不要）を入れる。ブラウザのコンソールで `location.origin` をコピーして貼ると確実。
+- **ホスト名の大文字小文字**が設定とブラウザで違うと、旧実装では一致しませんでした（現在はオリジンを小文字比較で検証）。
+- ログインボタンのリンクに **`return_to=`** が付いているか（`window.MEADOW_API_BASE` が空だと OAuth ボタン自体が出ません）。
+
+詳細（原因・再現条件・記事化の構成案）は **[docs/OAUTH_RETURN_TO_CASE_SENSITIVITY.md](../../docs/OAUTH_RETURN_TO_CASE_SENSITIVITY.md)** を参照。
+
+**補足**: OAuth は通るが **`/api/contributions` が CORS で失敗**（Network で `net::ERR_FAILED`）し、REST の **「集計がタイムアウト」**に落ちる場合は、多くは **`ALLOWED_ORIGINS` のホスト表記**とブラウザの `Origin`（小文字の `github.io`）の不一致が原因。`corsForRequest` は Origin を **大文字小文字無視で照合**する（コード参照）。
+
 ## セキュリティ
 
 `.dev.vars` と `wrangler secret` の値は **リポジトリに含めない**。
