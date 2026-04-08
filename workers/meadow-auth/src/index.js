@@ -185,19 +185,22 @@ export default {
 
     try {
       if (path === "/api/readme-card.svg" && request.method === "GET") {
-        return handleReadmeCard(request, env, url);
+        return await handleReadmeCard(request, env, url);
       }
-      if (path === "/auth/github") {
-        return handleAuthStart(request, env, url);
+      if (path === "/auth/github" && request.method === "GET") {
+        return await handleAuthStart(request, env, url);
       }
-      if (path === "/auth/github/callback") {
-        return handleAuthCallback(request, env, url);
+      if (path === "/auth/github/callback" && request.method === "GET") {
+        return await handleAuthCallback(request, env, url);
       }
       if (path === "/api/contributions" && request.method === "GET") {
-        return handleContributions(request, env);
+        return await handleContributions(request, env);
       }
-      if (path === "/auth/logout") {
-        return handleLogout(request, env, url);
+      if (path === "/auth/status" && request.method === "GET") {
+        return await handleAuthStatus(request, env);
+      }
+      if (path === "/auth/logout" && request.method === "GET") {
+        return await handleLogout(request, env, url);
       }
     } catch (e) {
       console.error(e);
@@ -349,18 +352,35 @@ async function handleAuthStart(request, env, url) {
   return redirect(authorize.toString());
 }
 
+/** return_to 付きでエラーリダイレクト（ユーザーを行き止まりにしない） */
+function redirectWithError(returnTo, errorCode, fallbackAllowed, env) {
+  let dest = returnTo;
+  if (!dest || !isAllowedReturnTo(dest, env)) {
+    const allowed = getAllowedOrigins(env);
+    dest = allowed.length ? `${allowed[0].replace(/\/$/, "")}/` : null;
+  }
+  if (dest) {
+    try {
+      const u = new URL(dest);
+      u.searchParams.set("meadow_auth_error", errorCode);
+      return redirect(u.toString());
+    } catch { /* fall through */ }
+  }
+  return new Response(`OAuth error: ${errorCode}`, { status: 400 });
+}
+
 async function handleAuthCallback(request, env, url) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   if (!code || !state) {
-    return new Response("Missing code or state", { status: 400 });
+    return redirectWithError(null, "missing_code_or_state", true, env);
   }
   const st = await verifySignedPayload(state, env.SESSION_SECRET);
   if (!st || !st.rt || !st.exp || Date.now() > st.exp) {
-    return new Response("Invalid state", { status: 400 });
+    return redirectWithError(st?.rt || null, "invalid_or_expired_state", true, env);
   }
   if (!isAllowedReturnTo(st.rt, env)) {
-    return new Response("Invalid return_to", { status: 400 });
+    return redirectWithError(null, "invalid_return_to", true, env);
   }
 
   const redirectUri = getRedirectUri(request);
@@ -377,13 +397,45 @@ async function handleAuthCallback(request, env, url) {
       redirect_uri: redirectUri,
     }),
   });
-  const tokenJson = await tokenRes.json();
+
+  let tokenJson;
+  try {
+    tokenJson = await tokenRes.json();
+  } catch {
+    return redirectWithError(st.rt, "token_response_not_json", true, env);
+  }
   if (!tokenRes.ok || !tokenJson.access_token) {
-    return new Response("Token exchange failed", { status: 400 });
+    const detail = tokenJson?.error || "no_access_token";
+    return redirectWithError(st.rt, `token_exchange_failed:${detail}`, true, env);
   }
 
   const cookie = await createSessionCookie(tokenJson.access_token, env.SESSION_SECRET);
   return redirect(st.rt, { "Set-Cookie": cookie });
+}
+
+async function handleAuthStatus(request, env) {
+  const cors = corsForRequest(request, env);
+  const token = await readSessionFromCookie(request, env.SESSION_SECRET);
+  if (!token) {
+    return jsonResponse({ loggedIn: false }, 200, cors);
+  }
+  // Optionally fetch the login name so the frontend can display it
+  try {
+    const res = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "User-Agent": GITHUB_API_UA,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    if (res.ok) {
+      const user = await res.json();
+      return jsonResponse({ loggedIn: true, login: user.login }, 200, cors);
+    }
+  } catch { /* fall through */ }
+  // Token present but couldn't verify with GitHub — still report loggedIn
+  // (contributions endpoint will fail independently if the token is actually invalid)
+  return jsonResponse({ loggedIn: true }, 200, cors);
 }
 
 async function handleContributions(request, env) {

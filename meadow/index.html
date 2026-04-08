@@ -95,16 +95,32 @@
           var here = location.origin + location.pathname + normalizedSearch;
           var login = document.getElementById("meadow-login");
           var logout = document.getElementById("meadow-logout");
+          // href だけ設定し、表示/非表示は main.js の updateAuthButtons に任せる
           if (login) {
-            login.style.display = "inline-flex";
             login.href =
               api + "/auth/github?return_to=" + encodeURIComponent(here);
           }
           if (logout) {
-            logout.style.display = "inline-flex";
             logout.href =
               api + "/auth/logout?return_to=" + encodeURIComponent(here);
           }
+        }
+
+        // OAuth エラーパラメータの表示
+        var authErr = p.get("meadow_auth_error");
+        if (authErr) {
+          var statusEl = document.getElementById("activity-status");
+          if (statusEl) {
+            statusEl.textContent = "OAuth エラー: " + authErr + "。もう一度お試しください。";
+          }
+          // URL からエラーパラメータを除去
+          p.delete("meadow_auth_error");
+          var cleanSearch = p.toString();
+          history.replaceState(
+            null,
+            "",
+            window.location.pathname + (cleanSearch ? "?" + cleanSearch : "") + window.location.hash
+          );
         }
       })();
     </script>
