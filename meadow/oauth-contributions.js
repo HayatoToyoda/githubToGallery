@@ -41,6 +41,26 @@ function flattenContributionDays(cal) {
 }
 
 /**
+ * セッションの有効性を確認する。
+ * @param {string} apiBase Worker のオリジン（末尾スラッシュなし）
+ * @returns {Promise<{ loggedIn: boolean, login?: string }>}
+ */
+export async function checkOAuthSession(apiBase) {
+  const base = (apiBase || "").replace(/\/$/, "");
+  if (!base) return { loggedIn: false };
+  try {
+    const res = await fetch(`${base}/auth/status`, {
+      credentials: "include",
+      mode: "cors",
+    });
+    if (!res.ok) return { loggedIn: false };
+    return await res.json();
+  } catch {
+    return { loggedIn: false };
+  }
+}
+
+/**
  * @param {string} apiBase Worker のオリジン（末尾スラッシュなし）
  * @returns {Promise<GithubActivity | null>}
  */

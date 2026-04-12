@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { resolveGithubActivity } from "./github-activity.js";
-import { fetchOAuthContributionActivity } from "./oauth-contributions.js";
+import { checkOAuthSession, fetchOAuthContributionActivity } from "./oauth-contributions.js";
 import { normalizeMeadowUrlSearch } from "./url-state.js";
 
 const params = new URLSearchParams(normalizeMeadowUrlSearch(window.location.search));
@@ -194,6 +194,15 @@ function createSphereGroundMaterial() {
   return mat;
 }
 
+/** OAuth ログイン/ログアウトボタンの表示をセッション状態に応じて切り替える */
+function updateAuthButtons(apiBase, loggedIn) {
+  const login = document.getElementById("meadow-login");
+  const logout = document.getElementById("meadow-logout");
+  if (!apiBase) return;
+  if (login) login.style.display = loggedIn ? "none" : "inline-flex";
+  if (logout) logout.style.display = loggedIn ? "inline-flex" : "none";
+}
+
 async function main() {
   const statusEl = document.getElementById("activity-status");
   const hasQuery = params.has("user") || params.has("u");
@@ -210,20 +219,28 @@ async function main() {
   let loadError = null;
   let oauthUsed = false;
 
+  // OAuth セッション確認 → ログイン済みのときだけ Contributions を取得
+  let oauthSession = { loggedIn: false };
   if (apiBase) {
-    if (statusEl) {
-      statusEl.textContent = "Contribution Calendar（OAuth）を確認しています…";
-    }
-    try {
-      const oa = await fetchOAuthContributionActivity(apiBase);
-      if (oa) {
-        activity = oa;
-        oauthUsed = true;
+    oauthSession = await checkOAuthSession(apiBase);
+    if (oauthSession.loggedIn) {
+      if (statusEl) {
+        statusEl.textContent = "Contribution Calendar（OAuth）を取得しています…";
       }
-    } catch (e) {
-      console.warn(e);
+      try {
+        const oa = await fetchOAuthContributionActivity(apiBase);
+        if (oa) {
+          activity = oa;
+          oauthUsed = true;
+        }
+      } catch (e) {
+        console.warn(e);
+      }
     }
   }
+
+  // ログイン/ログアウトボタンの表示切替
+  updateAuthButtons(apiBase, oauthSession.loggedIn);
 
   if (!oauthUsed && hasQuery) {
     if (statusEl) {
